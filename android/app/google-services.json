@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "777323726561",
+    "project_id": "fleet-managment-7a764",
+    "storage_bucket": "fleet-managment-7a764.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777323726561:android:14e690b665a8e66a0f19a0",
+        "android_client_info": {
+          "package_name": "com.example.fleet_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "777323726561-p6ig9po9f4eggol0j6lc928fnf80s9do.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIgxPUiNvcs4KQIpPSlqRQN_IObnpb8_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "777323726561-p6ig9po9f4eggol0j6lc928fnf80s9do.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "777323726561-hb7j2q0mel1biofg5a1diur35saqgknl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fleetApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
