@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "ዲዲዩ ፍሊት"
+  },
+  "auth": {
+    "login": "ግባ",
+    "register": "ተመዝግብ",
+    "email": "ኢሜይል",
+    "password": "የይለፍ ቃል",
+    "forgot_password": "የይለፍ ቃል ረስተዋል?",
+    "no_account": "መለያ የለዎትም?",
+    "have_account": "መለያ አለዎት? ይግቡ"
+  },
+  "home": {
+    "welcome_back": "እንኳን ደህና መጡ",
+    "quick_actions": "ፈጣን ድርጊቶች",
+    "recent_activities": "የቅርብ ጊዜ እንቅስቃሴዎች",
+    "vehicles": "ተሽከርካሪዎች",
+    "tasks": "ተግባራት",
+    "maintenance": "ጥገና",
+    "reports": "ሪፖርቶች",
+    "track": "ክትትል",
+    "profile": "መገለጫ"
+  }
+} 
