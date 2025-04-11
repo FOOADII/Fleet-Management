@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
+import '../../tasks/views/tasks_view_with_binding.dart';
+import '../../maintenance/views/maintenance_view_with_binding.dart';
 
 class Activity {
   final String title;
@@ -120,13 +122,10 @@ class HomeView extends GetView<HomeController> {
           index: controller.currentIndex.value,
           children: [
             _HomeContent(),
-            const Center(
-                child: Text('Tasks', style: TextStyle(color: Colors.black))),
+            const TasksViewWithBinding(),
             const Center(
                 child: Text('Tracking', style: TextStyle(color: Colors.black))),
-            const Center(
-                child:
-                    Text('Maintenance', style: TextStyle(color: Colors.black))),
+            const MaintenanceViewWithBinding(),
             const Center(
                 child: Text('Profile', style: TextStyle(color: Colors.black))),
           ],
@@ -211,31 +210,7 @@ class _HomeContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.analytics_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Fleet Overview',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ],
+                        children: [],
                       ),
                       const SizedBox(height: 24),
                       Container(
