@@ -44,7 +44,7 @@
 
   <script>
     // The value below is injected by flutter build, do not touch.
-    const serviceWorkerVersion = null;
+    var serviceWorkerVersion = null;
 
     // Your web app's Firebase configuration
     const firebaseConfig = {
@@ -68,16 +68,17 @@
 <body>
   <script>
     window.addEventListener('load', function(ev) {
+      var loading = document.querySelector('#loading');
       // Download main.dart.js
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
+          serviceWorkerUrl: 'flutter_service_worker.js?v=' + serviceWorkerVersion
         }
+      }).then(function(engineInitializer) {
+        return engineInitializer.initializeEngine();
+      }).then(function(appRunner) {
+        return appRunner.runApp();
       });
     });
   </script>
