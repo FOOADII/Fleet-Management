@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   get: ^4.6.6
-  google_maps_flutter: ^2.5.3
-  geolocator: 13.0.4
+  google_maps_flutter: ^2.12.1
+  geolocator: ^13.0.4
   intl: ^0.19.0
   flutter_localizations:
     sdk: flutter
@@ -24,6 +24,7 @@ dependencies:
   cloud_firestore: ^5.6.6
   firebase_messaging: ^15.2.5
   firebase_analytics: ^11.4.5
+  google_sign_in: ^6.2.1
 
   # Firebase Web
   firebase_core_web: ^2.10.0
@@ -31,6 +32,8 @@ dependencies:
   cloud_firestore_web: ^4.4.6
   firebase_messaging_web: ^3.5.17
   firebase_analytics_web: ^0.5.4+7
+  firebase_data_connect:
+    path: .packages/firebase_data_connect
 
   # State Management
   provider: ^6.1.1 
@@ -61,6 +64,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/translations/
     - assets/images/
     - assets/icons/
+    - assets/translations/

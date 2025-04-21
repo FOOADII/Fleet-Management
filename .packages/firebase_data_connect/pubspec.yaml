@@ -1,0 +1,11 @@
+name: firebase_data_connect
+description: A package for Firebase data connectivity
+version: 0.1.0
+
+environment:
+  sdk: '>=3.2.3 <4.0.0'
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter 

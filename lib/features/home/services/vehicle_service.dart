@@ -64,6 +64,8 @@ class VehicleService extends GetxService {
   void _setupRealtimeListeners() {
     if (_organizationId == null || _assignedVehicleId == null) {
       print('Cannot setup listeners: organizationId or vehicleId is null');
+      print('Organization ID: $_organizationId');
+      print('Vehicle ID: $_assignedVehicleId');
       return;
     }
 
@@ -108,9 +110,20 @@ class VehicleService extends GetxService {
         .snapshots()
         .listen((snapshot) {
       print('Schedule data received: ${snapshot.docs.length} documents');
+      if (snapshot.docs.isEmpty) {
+        print('No schedules found for today');
+        print('Query parameters:');
+        print('- Date: $today');
+        print('- Vehicle ID: $_assignedVehicleId');
+        print('- Organization ID: $_organizationId');
+      } else {
+        print('Schedule documents:');
+        for (var doc in snapshot.docs) {
+          print('Schedule: ${doc.data()}');
+        }
+      }
       todaySchedule.value = snapshot.docs.map((doc) {
         final data = doc.data();
-        print('Schedule document: $data');
         return data;
       }).toList();
     }, onError: (error) {
@@ -121,20 +134,29 @@ class VehicleService extends GetxService {
   Stream<QuerySnapshot<Map<String, dynamic>>> getTodaySchedule() {
     if (_organizationId == null || _assignedVehicleId == null) {
       print('Cannot get schedule: organizationId or vehicleId is null');
+      print('Organization ID: $_organizationId');
+      print('Vehicle ID: $_assignedVehicleId');
       return Stream.empty();
     }
 
     final today = DateTime.now().toIso8601String().split('T')[0];
     print('Getting schedule for date: $today');
+    print('Querying schedules for organization: $_organizationId');
+    print('Querying schedules for vehicle: $_assignedVehicleId');
 
-    return _firestore
-        .collection('organizations')
-        .doc(_organizationId)
-        .collection('schedules')
-        .where('date', isEqualTo: today)
-        .where('vehicleId', isEqualTo: _assignedVehicleId)
-        .orderBy('time')
-        .snapshots();
+    try {
+      return _firestore
+          .collection('organizations')
+          .doc(_organizationId)
+          .collection('schedules')
+          .where('date', isEqualTo: today)
+          .where('vehicleId', isEqualTo: _assignedVehicleId)
+          .orderBy('time')
+          .snapshots();
+    } catch (e) {
+      print('Error getting schedules: $e');
+      return Stream.empty();
+    }
   }
 
   Future<void> startTrip() async {

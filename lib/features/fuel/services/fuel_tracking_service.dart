@@ -90,8 +90,8 @@ class FuelTrackingService extends GetxService {
           .collection('organizations')
           .doc(_organizationId)
           .collection('fuel_records')
-          .where('createdBy', isEqualTo: _userId)
           .orderBy('timestamp', descending: true)
+          .where('createdBy', isEqualTo: _userId)
           .snapshots()
           .listen(
         (snapshot) {

@@ -1,0 +1,31 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fleet-managment-7a764",
+          "appId": "1:777323726561:android:14e690b665a8e66a0f19a0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fleet-managment-7a764",
+          "configurations": {
+            "android": "1:777323726561:android:14e690b665a8e66a0f19a0",
+            "ios": "1:777323726561:ios:dd43d86af9609b5b0f19a0",
+            "web": "1:777323726561:web:e0f42450dc5a05ba0f19a0"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "dataconnect": {
+      "dataDir": "dataconnect/.dataconnect/pgliteData"
+    }
+  },
+  "dataconnect": {
+    "source": "dataconnect"
+  }
+}
