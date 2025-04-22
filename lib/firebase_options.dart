@@ -24,6 +24,21 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
+      case TargetPlatform.macOS:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      case TargetPlatform.windows:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+      case TargetPlatform.linux:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -55,8 +70,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '777323726561',
     projectId: 'fleet-managment-7a764',
     storageBucket: 'fleet-managment-7a764.firebasestorage.app',
-    iosClientId:
-        '777323726561-hb7j2q0mel1biofg5a1diur35saqgknl.apps.googleusercontent.com',
+    iosClientId: '777323726561-hb7j2q0mel1biofg5a1diur35saqgknl.apps.googleusercontent.com',
     iosBundleId: 'com.example.fleetApp',
   );
+
 }
