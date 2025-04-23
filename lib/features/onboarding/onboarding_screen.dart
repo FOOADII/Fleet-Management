@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/routes/app_pages.dart';
-import '../../shared/widgets/custom_button.dart';
+import '../../core/theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,18 +17,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingItem(
       title: 'Welcome to DDU Fleet',
       description:
-          'Manage your fleet efficiently with our comprehensive solution',
+          'Your go-to app for hassle-free fleet management. We\'re here to help manage all your needs, anytime and anywhere.',
       icon: Icons.local_shipping,
     ),
     OnboardingItem(
-      title: 'Track Your Vehicles',
-      description: 'Monitor vehicle locations and status in real-time',
+      title: 'Track in Real-Time',
+      description:
+          'Monitor your fleet\'s location and status in real-time with our advanced tracking system.',
       icon: Icons.location_on,
     ),
     OnboardingItem(
-      title: 'Schedule Maintenance',
+      title: 'Efficient Management',
       description:
-          'Keep your fleet in top condition with scheduled maintenance',
+          'Manage schedules, maintenance, and reports all in one place.',
       icon: Icons.assessment,
     ),
   ];
@@ -37,111 +37,70 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _items.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      return _OnboardingPage(_items[index]);
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      // Page Indicators
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          _items.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 32 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      // Next/Get Started Button
-                      Container(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (_currentPage < _items.length - 1) {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            } else {
-                              Get.offAllNamed(Routes.login);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            _currentPage < _items.length - 1
-                                ? 'Next'
-                                : 'Get Started',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // Skip Button
-            if (_currentPage < _items.length - 1)
-              Positioned(
-                top: 16,
-                right: 16,
-                child: TextButton(
-                  onPressed: () => Get.offAllNamed(Routes.login),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: const Text(
-                    'Skip',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _items.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return _OnboardingPage(_items[index]);
+                },
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _items.length,
+                      (index) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: _currentPage == index ? 24 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _currentPage == index
+                              ? AppTheme.primary
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_currentPage < _items.length - 1) {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      } else {
+                        Get.offNamed('/login');
+                      }
+                    },
+                    child: Text(
+                      _currentPage < _items.length - 1 ? 'Next' : 'Get Started',
+                    ),
+                  ),
+                  if (_currentPage < _items.length - 1) ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => Get.offNamed('/login'),
+                      child: const Text('Skip'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -173,38 +132,21 @@ class _OnboardingPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon with background
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              item.icon,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-          ),
-          const SizedBox(height: 48),
-          // Title
+          Icon(item.icon, size: 120, color: AppTheme.primary),
+          const SizedBox(height: 40),
           Text(
             item.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          // Description
           Text(
             item.description,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withOpacity(0.7),
-                  height: 1.5,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
