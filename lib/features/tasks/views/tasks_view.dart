@@ -21,29 +21,38 @@ class TasksView extends GetView<TasksController> {
       // Show AppBar only when navigated to directly (not from home navigation)
       appBar: _shouldShowAppBar
           ? AppBar(
-              title: const Text('Tasks'),
+              title: Text('tasks'.tr),
               backgroundColor: colorScheme.surface,
               foregroundColor: colorScheme.onSurface,
               elevation: 1,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.sync),
-                  tooltip: 'Refresh Data',
+                  tooltip: 'refresh_data'.tr,
                   onPressed: () => _refreshData(context),
                 ),
                 IconButton(
                   icon: const Icon(Icons.filter_list),
-                  tooltip: 'Filter Tasks',
+                  tooltip: 'filter_tasks'.tr,
                   onPressed: () => _showFilterDialog(context),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_task),
-                  tooltip: 'Add New Task',
+                  tooltip: 'add_new_task'.tr,
                   onPressed: () => _showAddTaskDialog(context),
                 ),
               ],
             )
-          : null, // No AppBar if part of Home
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: AppBar(
+                title: Text('tasks'.tr),
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.onSurface,
+                elevation: 1,
+                automaticallyImplyLeading: false,
+              ),
+            ),
       body: Obx(() {
         if (controller.isLoading.value && controller.tasks.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -63,7 +72,7 @@ class TasksView extends GetView<TasksController> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'No Tasks Found',
+                    'no_tasks'.tr,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: colorScheme.onSurface,
                     ),
@@ -117,12 +126,10 @@ class TasksView extends GetView<TasksController> {
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddTaskDialog(context),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        tooltip: 'Add New Task',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: Text('add_task'.tr),
       ),
     );
   }
@@ -134,8 +141,8 @@ class TasksView extends GetView<TasksController> {
     try {
       await controller.loadTasks();
       Get.snackbar(
-        'Data Refreshed',
-        'Successfully retrieved latest tasks',
+        'success'.tr,
+        'task_refreshed'.tr,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.green.shade600,
         colorText: Colors.white,
@@ -146,8 +153,8 @@ class TasksView extends GetView<TasksController> {
       );
     } catch (e) {
       Get.snackbar(
-        'Refresh Failed',
-        'Could not retrieve latest data: ${e.toString()}',
+        'error'.tr,
+        'refresh_failed'.tr,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Theme.of(context).colorScheme.error,
         colorText: Theme.of(context).colorScheme.onError,
@@ -201,7 +208,7 @@ class TasksView extends GetView<TasksController> {
     return overlay;
   }
 
-  void _showTaskDetailsDialog(BuildContext context, Task task) {
+  void _showTaskDetailsDialog(BuildContext context, TaskModel task) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -222,32 +229,40 @@ class TasksView extends GetView<TasksController> {
               _buildDetailRow(
                   theme,
                   Icons.priority_high,
-                  'Priority',
-                  task.priority.capitalizeFirst!,
+                  'priority'.tr,
+                  task.priority?.capitalizeFirst ?? '',
                   _getPriorityColor(task.priority)),
-              _buildDetailRow(theme, _getStatusIcon(task.status), 'Status',
-                  task.status.capitalizeFirst!, _getStatusColor(task.status)),
+              _buildDetailRow(
+                  theme,
+                  _getStatusIcon(task.status),
+                  'status'.tr,
+                  task.status?.capitalizeFirst ?? '',
+                  _getStatusColor(task.status)),
               if (task.assignedTo != null)
-                _buildDetailRow(theme, Icons.person_outline, 'Assigned to',
+                _buildDetailRow(theme, Icons.person_outline, 'assigned_to'.tr,
                     task.assignedTo!, colorScheme.onSurfaceVariant),
               if (task.vehicleId != null)
-                _buildDetailRow(theme, Icons.directions_car_outlined, 'Vehicle',
-                    task.vehicleId!, colorScheme.onSurfaceVariant),
+                _buildDetailRow(
+                    theme,
+                    Icons.directions_car_outlined,
+                    'vehicle'.tr,
+                    task.vehicleId!,
+                    colorScheme.onSurfaceVariant),
               if (task.dueDate != null)
                 _buildDetailRow(
                     theme,
                     Icons.calendar_today_outlined,
-                    'Due Date',
+                    'due_date'.tr,
                     task.dueDate!.toString().split(' ')[0],
                     colorScheme.onSurfaceVariant),
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 8),
               _buildTimestampRow(
-                  theme, Icons.access_time, 'Created', task.createdAt),
+                  theme, Icons.access_time, 'created'.tr, task.createdAt),
               if (task.updatedAt != null)
                 _buildTimestampRow(
-                    theme, Icons.update, 'Updated', task.updatedAt!),
+                    theme, Icons.update, 'updated'.tr, task.updatedAt!),
             ],
           ),
         ),
@@ -309,7 +324,7 @@ class TasksView extends GetView<TasksController> {
   }
 
   Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
+    switch (priority?.toLowerCase()) {
       case 'high':
         return Colors.red.shade600;
       case 'medium':
@@ -322,7 +337,7 @@ class TasksView extends GetView<TasksController> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
         return Colors.green.shade600;
       case 'pending':
@@ -335,7 +350,7 @@ class TasksView extends GetView<TasksController> {
   }
 
   IconData _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
         return Icons.check_circle_outline;
       case 'pending':
@@ -472,6 +487,7 @@ class TasksView extends GetView<TasksController> {
                     color: Colors.red.shade700,
                     onTap: () {
                       final filtered = controller.tasks
+                          .whereType<TaskModel>()
                           .where(
                               (task) => task.priority.toLowerCase() == 'high')
                           .toList();
@@ -483,6 +499,7 @@ class TasksView extends GetView<TasksController> {
                     color: Colors.orange.shade700,
                     onTap: () {
                       final filtered = controller.tasks
+                          .whereType<TaskModel>()
                           .where(
                               (task) => task.priority.toLowerCase() == 'medium')
                           .toList();
@@ -494,6 +511,7 @@ class TasksView extends GetView<TasksController> {
                     color: Colors.green.shade700,
                     onTap: () {
                       final filtered = controller.tasks
+                          .whereType<TaskModel>()
                           .where((task) => task.priority.toLowerCase() == 'low')
                           .toList();
                       controller.tasks.value = filtered;
@@ -684,7 +702,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  final Task task;
+  final TaskModel task;
   final Function(String) onStatusChange;
   final VoidCallback onDelete;
   final VoidCallback? onViewDetails;
@@ -769,7 +787,7 @@ class _TaskCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Chip(
-                    label: Text(task.priority.capitalizeFirst!),
+                    label: Text(task.priority?.capitalizeFirst ?? ''),
                     labelStyle: theme.textTheme.labelSmall?.copyWith(
                         color: priorityColor, fontWeight: FontWeight.bold),
                     backgroundColor: priorityColor.withOpacity(0.15),
@@ -807,7 +825,7 @@ class _TaskCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: Chip(
                       avatar: Icon(statusIcon, color: statusColor, size: 16),
-                      label: Text(task.status.capitalizeFirst!),
+                      label: Text(task.status?.capitalizeFirst ?? ''),
                       labelStyle: theme.textTheme.labelMedium?.copyWith(
                           color: statusColor, fontWeight: FontWeight.bold),
                       backgroundColor: statusColor.withOpacity(0.15),
