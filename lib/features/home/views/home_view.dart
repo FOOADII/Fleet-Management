@@ -292,56 +292,22 @@ class HomeView extends GetView<HomeController> {
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: [
               NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      Icon(Icons.home_outlined, size: 24, color: Colors.blue),
-                ),
-                selectedIcon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.home_rounded, size: 24, color: Colors.blue),
-                ),
+                icon: Icon(Icons.home_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.home_rounded,
+                    size: 22, color: theme.iconTheme.color),
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.assignment_outlined,
-                      size: 24, color: Colors.orange),
-                ),
-                selectedIcon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.assignment_rounded,
-                      size: 24, color: Colors.orange),
-                ),
+                icon: Icon(Icons.assignment_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.assignment_rounded,
+                    size: 22, color: theme.iconTheme.color),
                 label: 'Tasks',
               ),
               NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.location_on_outlined,
-                      size: 24, color: theme.colorScheme.primary),
-                ),
+                icon: Icon(Icons.location_on_outlined,
+                    size: 22, color: theme.iconTheme.color),
                 selectedIcon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -349,50 +315,22 @@ class HomeView extends GetView<HomeController> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.location_on_rounded,
-                      size: 24, color: theme.colorScheme.primary),
+                      size: 24, color: theme.iconTheme.color),
                 ),
                 label: 'Tracking',
               ),
               NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.build_outlined,
-                      size: 24, color: Colors.purple),
-                ),
-                selectedIcon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      Icon(Icons.build_rounded, size: 24, color: Colors.purple),
-                ),
+                icon: Icon(Icons.build_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.build_rounded,
+                    size: 22, color: theme.iconTheme.color),
                 label: 'Maintenance',
               ),
               NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.local_gas_station_outlined,
-                      size: 24, color: Colors.green),
-                ),
-                selectedIcon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.local_gas_station_rounded,
-                      size: 24, color: Colors.green),
-                ),
+                icon: Icon(Icons.local_gas_station_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.local_gas_station_rounded,
+                    size: 22, color: theme.iconTheme.color),
                 label: 'Fuel',
               ),
             ],
