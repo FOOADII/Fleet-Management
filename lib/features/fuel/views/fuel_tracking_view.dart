@@ -29,23 +29,23 @@ class _FuelTrackingViewState extends State<FuelTrackingView>
   Widget build(BuildContext context) {
     super.build(context); // Required by AutomaticKeepAliveClientMixin
     final fuelService = Get.find<FuelTrackingService>();
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Fuel Tracking',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: theme.iconTheme.color),
             onPressed: () => fuelService.loadFuelRecords(),
           ),
         ],
@@ -62,6 +62,7 @@ class _FuelTrackingViewState extends State<FuelTrackingView>
           ],
         ),
         child: FloatingActionButton(
+          heroTag: 'fuel_tracking_fab',
           onPressed: () => _showAddFuelRecordForm(),
           backgroundColor: const Color(0xFF4CAF50),
           elevation: 0,
@@ -78,41 +79,23 @@ class _FuelTrackingViewState extends State<FuelTrackingView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.local_gas_station,
-                    size: 64,
-                    color: const Color(0xFF4CAF50),
-                  ),
+                Icon(
+                  Icons.local_gas_station_outlined,
+                  size: 80,
+                  color: theme.colorScheme.primary.withOpacity(0.5),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Text(
-                  'No fuel records yet',
-                  style: TextStyle(
-                    color: Colors.grey[800],
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                  'No Fuel Records',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () => _showAddFuelRecordForm(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Fuel Record'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                const SizedBox(height: 12),
+                Text(
+                  'Add your first fuel record by\ntapping the + button below',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -124,29 +107,102 @@ class _FuelTrackingViewState extends State<FuelTrackingView>
           itemCount: fuelService.fuelRecords.length,
           itemBuilder: (context, index) {
             final record = fuelService.fuelRecords[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              elevation: 2,
-              shadowColor: Colors.black.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  // Show record details in bottom sheet
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
+            return GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.local_gas_station,
+                                color: Color(0xFF4CAF50),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Fuel Record Details',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Divider(color: theme.dividerColor, height: 24),
+                        _DetailItem(
+                          icon: Icons.directions_car,
+                          label: 'Vehicle',
+                          value: record.vehicleId,
+                        ),
+                        _DetailItem(
+                          icon: Icons.speed,
+                          label: 'Odometer',
+                          value: '${record.odometerReading} km',
+                        ),
+                        _DetailItem(
+                          icon: Icons.water_drop,
+                          label: 'Fuel Amount',
+                          value: '${record.fuelAmount} L',
+                        ),
+                        _DetailItem(
+                          icon: Icons.gas_meter,
+                          label: 'Fuel Gauge',
+                          value: '${record.fuelGauge}%',
+                        ),
+                        if (record.notes?.isNotEmpty ?? false)
+                          _DetailItem(
+                            icon: Icons.note,
+                            label: 'Notes',
+                            value: record.notes!,
+                          ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time,
+                                size: 16,
+                                color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat('MMM d, y HH:mm')
+                                  .format(record.timestamp),
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
@@ -165,184 +221,92 @@ class _FuelTrackingViewState extends State<FuelTrackingView>
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Fuel Record Details',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      record.vehicleId,
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat('MMM d, y HH:mm')
+                                          .format(record.timestamp),
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(record.status)
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  record.status.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _getStatusColor(record.status),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          const Divider(height: 24),
-                          _DetailItem(
-                            icon: Icons.directions_car,
-                            label: 'Vehicle',
-                            value: record.vehicleId,
-                          ),
-                          _DetailItem(
-                            icon: Icons.speed,
-                            label: 'Odometer',
-                            value: '${record.odometerReading} km',
-                          ),
-                          _DetailItem(
-                            icon: Icons.water_drop,
-                            label: 'Fuel Amount',
-                            value: '${record.fuelAmount} L',
-                          ),
-                          _DetailItem(
-                            icon: Icons.gas_meter,
-                            label: 'Fuel Gauge',
-                            value: '${record.fuelGauge}%',
-                          ),
-                          if (record.notes?.isNotEmpty ?? false)
-                            _DetailItem(
-                              icon: Icons.note,
-                              label: 'Notes',
-                              value: record.notes!,
-                            ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Icon(Icons.access_time,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                DateFormat('MMM d, y HH:mm')
-                                    .format(record.timestamp),
-                                style: const TextStyle(color: Colors.grey),
+                              _InfoChip(
+                                icon: Icons.speed,
+                                label: '${record.odometerReading} km',
+                              ),
+                              _InfoChip(
+                                icon: Icons.water_drop,
+                                label: '${record.fuelAmount} L',
+                              ),
+                              _InfoChip(
+                                icon: Icons.gas_meter,
+                                label: '${record.fuelGauge}%',
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF4CAF50)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.local_gas_station,
-                                    color: Color(0xFF4CAF50),
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        record.vehicleId,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('MMM d, y HH:mm')
-                                            .format(record.timestamp),
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(record.status)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    record.status.toUpperCase(),
-                                    style: TextStyle(
-                                      color: _getStatusColor(record.status),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _InfoChip(
-                                  icon: Icons.speed,
-                                  label: '${record.odometerReading} km',
-                                ),
-                                _InfoChip(
-                                  icon: Icons.water_drop,
-                                  label: '${record.fuelAmount} L',
-                                ),
-                                _InfoChip(
-                                  icon: Icons.gas_meter,
-                                  label: '${record.fuelGauge}%',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(12)),
                       ),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(12)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline,
-                                size: 16, color: Colors.grey[600]),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Tap to view details',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 16,
+                              color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Tap to view details',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -379,6 +343,8 @@ class _DetailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -386,10 +352,11 @@ class _DetailItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: theme.colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 20, color: Colors.grey[600]),
+            child:
+                Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 12),
           Column(
@@ -397,17 +364,11 @@ class _DetailItem extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: theme.textTheme.bodySmall,
               ),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: theme.textTheme.titleMedium,
               ),
             ],
           ),
@@ -428,10 +389,12 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: theme.colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -440,15 +403,12 @@ class _InfoChip extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: theme.textTheme.bodySmall,
           ),
         ],
       ),
