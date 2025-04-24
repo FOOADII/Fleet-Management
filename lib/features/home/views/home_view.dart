@@ -373,24 +373,23 @@ class _HomeContent extends GetView<HomeController> {
                 children: [
                   Expanded(
                     child: Obx(() => _QuickAccessBox(
-                          title: 'current_location'.tr,
-                          value: controller.quickStats['currentLocation'] ??
-                              'Updating...',
-                          subtitle: 'your_location'.tr,
-                          icon: Icons.location_on_rounded,
-                          color: Colors.blue,
-                          onTap: () => controller.changePage(2),
-                        )),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Obx(() => _QuickAccessBox(
                           title: 'todays_tasks'.tr,
                           value: '${controller.quickStats['pendingTasks']}',
                           subtitle: 'pending_tasks'.tr,
                           icon: Icons.assignment_rounded,
                           color: Colors.orange,
                           onTap: () => controller.changePage(1),
+                        )),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Obx(() => _QuickAccessBox(
+                          title: 'maintenance_due'.tr,
+                          value: '${controller.quickStats['maintenanceDue']}',
+                          subtitle: 'vehicles_due'.tr,
+                          icon: Icons.build_rounded,
+                          color: Colors.purple,
+                          onTap: () => controller.changePage(3),
                         )),
                   ),
                 ],
@@ -404,13 +403,12 @@ class _HomeContent extends GetView<HomeController> {
                 children: [
                   Expanded(
                     child: Obx(() => _QuickAccessBox(
-                          title: 'next_destination'.tr,
-                          value: controller.quickStats['nextDestination'] ??
-                              'No Task',
-                          subtitle: 'upcoming_stop'.tr,
-                          icon: Icons.navigation_rounded,
-                          color: Colors.green,
-                          onTap: () => controller.changePage(2),
+                          title: 'fuel_alerts'.tr,
+                          value: '${controller.quickStats['fuelAlerts']}',
+                          subtitle: 'low_fuel'.tr,
+                          icon: Icons.local_gas_station_rounded,
+                          color: Colors.red,
+                          onTap: () => controller.changePage(4),
                         )),
                   ),
                   const SizedBox(width: 16),
@@ -421,7 +419,7 @@ class _HomeContent extends GetView<HomeController> {
                               '${controller.quickStats['routeProgress'] ?? 0}%',
                           subtitle: 'completion_status'.tr,
                           icon: Icons.route_rounded,
-                          color: Colors.purple,
+                          color: Colors.green,
                           onTap: () => controller.changePage(2),
                         )),
                   ),
