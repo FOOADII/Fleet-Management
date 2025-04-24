@@ -58,23 +58,17 @@ class MaintenanceView extends GetView<MaintenanceController> {
             children: [
               if (!_shouldShowAppBar) ...[
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Maintenance Records',
-                        style: theme.textTheme.titleLarge,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 8.0),
+                  child: Center(
+                    child: Text(
+                      'Maintenance Records',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.sync),
-                        tooltip: 'Refresh Data',
-                        onPressed: () => _refreshData(context),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-                const Divider(),
               ],
               Expanded(
                 child: ListView.builder(
@@ -95,6 +89,7 @@ class MaintenanceView extends GetView<MaintenanceController> {
         );
       }),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'maintenance_fab',
         onPressed: () => _showAddLogDialog(context),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,

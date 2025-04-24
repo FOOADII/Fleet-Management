@@ -1,144 +1,205 @@
 import 'dart:async';
 import 'package:get/get.dart';
-import '../services/maintenance_service.dart';
-import 'package:flutter/material.dart';
+import '../../../core/services/firebase_maintenance_service.dart';
+import '../models/maintenance_log_model.dart';
 
 class MaintenanceController extends GetxController {
-  late final MaintenanceService _maintenanceService;
-  final error = ''.obs;
-  final filterStatus = 'all'.obs;
-  final records = <Map<String, dynamic>>[].obs;
-  final isLoading = false.obs;
+  final FirebaseMaintenanceService _maintenanceService;
+  final RxBool isLoading = false.obs;
+  final RxList<MaintenanceLog> maintenanceLogs = <MaintenanceLog>[].obs;
+  StreamSubscription<List<MaintenanceLog>>? _logSubscription;
 
-  MaintenanceService get maintenanceService => _maintenanceService;
+  MaintenanceController(this._maintenanceService);
 
   @override
   void onInit() {
     super.onInit();
-    _maintenanceService = Get.find<MaintenanceService>();
-    loadMaintenanceRecords();
+    _subscribeToMaintenanceLogs();
   }
 
-  Future<void> loadMaintenanceRecords() async {
-    try {
-      print('=== Maintenance Controller Debug ===');
-      print('Loading maintenance records...');
-      isLoading.value = true;
-      error.value = '';
-
-      final result = await _maintenanceService.getMaintenanceRecords();
-      print('Received ${result.length} records from service');
-
-      records.value = result;
-      print('Successfully updated records list with ${records.length} items');
-      print('=== End Maintenance Controller Debug ===');
-    } catch (e) {
-      print('=== Maintenance Controller Error ===');
-      print('Error loading maintenance records: $e');
-      error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        'Failed to load maintenance records: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
-        duration: const Duration(seconds: 5),
-      );
-      print('=== End Maintenance Controller Error ===');
-    } finally {
-      isLoading.value = false;
-    }
+  @override
+  void onClose() {
+    _logSubscription?.cancel();
+    super.onClose();
   }
 
-  List<Map<String, dynamic>> get filteredRecords {
-    if (filterStatus.value == 'all') {
-      return records;
-    }
-    return records
-        .where((record) => record['status'] == filterStatus.value)
-        .toList();
+  void _subscribeToMaintenanceLogs() {
+    isLoading.value = true;
+    _logSubscription = _maintenanceService.maintenanceLogStream().listen(
+      (logs) {
+        maintenanceLogs.value = logs;
+        isLoading.value = false;
+      },
+      onError: (error) {
+        print('Error subscribing to maintenance logs: $error');
+        isLoading.value = false;
+        Get.snackbar(
+          'Error Loading Data',
+          'Failed to load maintenance records: ${error.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Get.theme.colorScheme.error,
+          colorText: Get.theme.colorScheme.onError,
+        );
+      },
+    );
   }
 
-  void setFilterStatus(String status) {
-    filterStatus.value = status;
-  }
-
-  Future<void> createMaintenanceRecord(Map<String, dynamic> data) async {
+  // Manually fetch all logs (e.g., for pull-to-refresh)
+  Future<void> loadMaintenanceLogs() async {
     try {
       isLoading.value = true;
-      error.value = '';
-      await _maintenanceService.createMaintenanceRecord(data);
-      Get.snackbar(
-        'Success',
-        'Maintenance record created successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
-        colorText: const Color(0xFF4CAF50),
-      );
-      loadMaintenanceRecords();
+      maintenanceLogs.value = await _maintenanceService.getMaintenanceLogs();
     } catch (e) {
-      error.value = e.toString();
       Get.snackbar(
-        'Error',
-        'Failed to create maintenance record',
+        'Error Refreshing',
+        'Failed to refresh maintenance records: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
       );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> updateMaintenanceRecord(
-      String id, Map<String, dynamic> data) async {
+  // Add a new log
+  Future<void> addMaintenanceLog({
+    required String vehicleId,
+    required String description,
+    required String maintenanceType,
+    required DateTime datePerformed,
+    int? odometerReading,
+    double? cost,
+    String? notes,
+    required MaintenanceStatus status,
+    DateTime? nextDueDate,
+  }) async {
     try {
-      isLoading.value = true;
-      error.value = '';
-      await _maintenanceService.updateMaintenanceRecord(id, data);
+      // Create a temporary log object (ID will be assigned by service)
+      final newLog = MaintenanceLog(
+        id: '', // Temporary, will be replaced by Firestore ID
+        vehicleId: vehicleId,
+        description: description,
+        maintenanceType: maintenanceType,
+        datePerformed: datePerformed,
+        odometerReading: odometerReading,
+        cost: cost,
+        notes: notes,
+        status: status,
+        nextDueDate: nextDueDate,
+        createdAt: DateTime.now(), // Will be replaced by server timestamp
+      );
+
+      isLoading.value = true; // Optional: show loading while adding
+      await _maintenanceService.addMaintenanceLog(newLog);
+      // No need to manually add to list, stream will update it
       Get.snackbar(
         'Success',
-        'Maintenance record updated successfully',
+        'Maintenance log added successfully',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
-        colorText: const Color(0xFF4CAF50),
       );
-      loadMaintenanceRecords();
     } catch (e) {
-      error.value = e.toString();
       Get.snackbar(
-        'Error',
-        'Failed to update maintenance record',
+        'Error Adding Log',
+        'Failed to add maintenance record: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+      );
+    } finally {
+      isLoading.value = false; // Optional: hide loading
+    }
+  }
+
+  // Update log status or other details
+  Future<void> updateMaintenanceLog(
+      String logId, Map<String, dynamic> data) async {
+    try {
+      isLoading.value = true; // Optional
+      await _maintenanceService.updateMaintenanceLog(logId, data);
+      // Stream updates the list
+      Get.snackbar(
+        'Success',
+        'Maintenance log updated',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error Updating Log',
+        'Failed to update maintenance record: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+      );
+    } finally {
+      isLoading.value = false; // Optional
+    }
+  }
+
+  // Delete a log
+  Future<void> deleteMaintenanceLog(String logId) async {
+    try {
+      isLoading.value = true; // Optional
+      await _maintenanceService.deleteMaintenanceLog(logId);
+      // Stream updates the list
+      Get.snackbar(
+        'Success',
+        'Maintenance log deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error Deleting Log',
+        'Failed to delete maintenance record: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+      );
+    } finally {
+      isLoading.value = false; // Optional
+    }
+  }
+
+  // Filter logs by status
+  Future<void> filterLogsByStatus(MaintenanceStatus? status) async {
+    if (status == null) {
+      // If null, load all logs (rely on stream or fetch all)
+      _subscribeToMaintenanceLogs(); // Re-subscribe to get all
+      return;
+    }
+    try {
+      isLoading.value = true;
+      maintenanceLogs.value = await _maintenanceService.getLogsByStatus(status);
+    } catch (e) {
+      Get.snackbar(
+        'Error Filtering',
+        'Failed to filter records: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
       );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> deleteMaintenanceRecord(String id) async {
+  // Filter logs by vehicle ID
+  Future<void> filterLogsByVehicle(String? vehicleId) async {
+    if (vehicleId == null || vehicleId.isEmpty) {
+      _subscribeToMaintenanceLogs(); // Re-subscribe to get all
+      return;
+    }
     try {
       isLoading.value = true;
-      error.value = '';
-      await _maintenanceService.deleteMaintenanceRecord(id);
-      Get.snackbar(
-        'Success',
-        'Maintenance record deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
-        colorText: const Color(0xFF4CAF50),
-      );
-      loadMaintenanceRecords();
+      maintenanceLogs.value =
+          await _maintenanceService.getLogsByVehicle(vehicleId);
     } catch (e) {
-      error.value = e.toString();
       Get.snackbar(
-        'Error',
-        'Failed to delete maintenance record',
+        'Error Filtering',
+        'Failed to load records for vehicle: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
       );
     } finally {
       isLoading.value = false;

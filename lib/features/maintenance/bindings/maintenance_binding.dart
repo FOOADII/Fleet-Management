@@ -1,24 +1,19 @@
 import 'package:get/get.dart';
 import '../controllers/maintenance_controller.dart';
-import '../services/maintenance_service.dart';
-import '../../../core/services/firebase_auth_service.dart';
+import '../../../core/services/firebase_maintenance_service.dart';
 
 class MaintenanceBinding extends Bindings {
   @override
   void dependencies() {
-    // Initialize FirebaseAuthService first
-    Get.put<FirebaseAuthService>(FirebaseAuthService(), permanent: true);
+    // Register the service (if not already globally registered)
+    // Use fenix: true if you want it to be re-created if disposed
+    Get.lazyPut<FirebaseMaintenanceService>(() => FirebaseMaintenanceService(),
+        fenix: true);
 
-    // Initialize MaintenanceService with its dependency
-    Get.put<MaintenanceService>(
-      MaintenanceService(),
-      permanent: true,
-    );
-
-    // Initialize MaintenanceController with its dependency
-    Get.put<MaintenanceController>(
-      MaintenanceController(),
-      permanent: true,
+    // Register the controller, providing the service dependency
+    Get.lazyPut<MaintenanceController>(
+      () => MaintenanceController(Get.find<FirebaseMaintenanceService>()),
+      fenix: true, // Optional: re-create controller if needed
     );
   }
 }
