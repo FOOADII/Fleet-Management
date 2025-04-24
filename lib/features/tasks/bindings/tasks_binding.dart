@@ -6,7 +6,6 @@ class TasksBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<FirebaseTasksService>(() => FirebaseTasksService());
-    Get.lazyPut<TasksController>(
-        () => TasksController(Get.find<FirebaseTasksService>()));
+    Get.lazyPut<TasksController>(() => TasksController());
   }
 }

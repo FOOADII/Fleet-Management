@@ -1,20 +1,18 @@
 import 'dart:async';
 import 'package:get/get.dart';
-import '../../../core/services/firebase_tasks_service.dart';
 import '../models/task_model.dart';
+import '../../../core/services/firebase_tasks_service.dart';
 
 class TasksController extends GetxController {
-  final FirebaseTasksService _tasksService;
+  final FirebaseTasksService _tasksService = Get.find<FirebaseTasksService>();
   final RxBool isLoading = false.obs;
-  final RxList<Task> tasks = <Task>[].obs;
-  StreamSubscription<List<Task>>? _tasksSubscription;
-
-  TasksController(this._tasksService);
+  final RxList<TaskModel> tasks = <TaskModel>[].obs;
+  StreamSubscription<List<TaskModel>>? _tasksSubscription;
 
   @override
   void onInit() {
     super.onInit();
-    _subscribeToTasks();
+    loadTasks();
   }
 
   @override
@@ -23,37 +21,32 @@ class TasksController extends GetxController {
     super.onClose();
   }
 
-  void _subscribeToTasks() {
-    isLoading.value = true;
-    _tasksSubscription = _tasksService.tasksStream().listen(
-      (tasksList) {
-        tasks.value = tasksList;
-        isLoading.value = false;
-      },
-      onError: (error) {
-        print('Error subscribing to tasks: $error');
-        isLoading.value = false;
-        Get.snackbar(
-          'Error',
-          'Failed to load tasks: ${error.toString()}',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      },
-    );
-  }
-
   Future<void> loadTasks() async {
     try {
       isLoading.value = true;
-      tasks.value = await _tasksService.getTasks();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load tasks: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      _tasksSubscription?.cancel();
+      _tasksSubscription = _tasksService.getTasks().listen(
+        (tasksList) {
+          tasks.value = tasksList;
+          isLoading.value = false;
+        },
+        onError: (error) {
+          print('Error loading tasks: $error');
+          isLoading.value = false;
+        },
       );
-    } finally {
+    } catch (e) {
+      print('Error in loadTasks: $e');
       isLoading.value = false;
+    }
+  }
+
+  Future<List<TaskModel>> getTasksByStatus(String status) async {
+    try {
+      return await _tasksService.getTasksByStatus(status);
+    } catch (e) {
+      print('Error getting tasks by status: $e');
+      return [];
     }
   }
 
@@ -66,90 +59,84 @@ class TasksController extends GetxController {
     String? vehicleId,
   }) async {
     try {
-      isLoading.value = true;
-      await _tasksService.createTask(
-        title,
-        description,
-        priority,
-        dueDate: dueDate,
+      final task = TaskModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        description: description,
+        dueDate: dueDate ?? DateTime.now().add(const Duration(days: 1)),
+        priority: priority,
+        status: 'pending',
         assignedTo: assignedTo,
         vehicleId: vehicleId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
-
+      await _tasksService.createTask(task);
       Get.snackbar(
         'Success',
         'Task created successfully',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
       );
     } catch (e) {
+      print('Error creating task: $e');
       Get.snackbar(
         'Error',
-        'Failed to create task: ${e.toString()}',
+        'Failed to create task: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
       );
-    } finally {
-      isLoading.value = false;
     }
   }
 
-  Future<void> updateTaskStatus(String taskId, String status) async {
+  Future<void> updateTaskStatus(String taskId, String newStatus) async {
     try {
-      isLoading.value = true;
-      await _tasksService.updateTask(taskId, {'status': status});
+      final task = tasks.firstWhere((t) => t.id == taskId);
+      final updatedTask = task.copyWith(
+        status: newStatus,
+        updatedAt: DateTime.now(),
+      );
+      await _tasksService.updateTask(updatedTask);
+      Get.snackbar(
+        'Success',
+        'Task status updated',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
+      );
     } catch (e) {
+      print('Error updating task status: $e');
       Get.snackbar(
         'Error',
-        'Failed to update task: ${e.toString()}',
+        'Failed to update task status: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
       );
-    } finally {
-      isLoading.value = false;
     }
   }
 
   Future<void> deleteTask(String taskId) async {
     try {
-      isLoading.value = true;
       await _tasksService.deleteTask(taskId);
       Get.snackbar(
         'Success',
-        'Task deleted successfully',
+        'Task deleted',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
       );
     } catch (e) {
+      print('Error deleting task: $e');
       Get.snackbar(
         'Error',
-        'Failed to delete task: ${e.toString()}',
+        'Failed to delete task: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
       );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<List<Task>> getTasksByVehicle(String vehicleId) async {
-    try {
-      return await _tasksService.getTasksByVehicle(vehicleId);
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load vehicle tasks: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return [];
-    }
-  }
-
-  Future<List<Task>> getTasksByStatus(String status) async {
-    try {
-      return await _tasksService.getTasksByStatus(status);
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load tasks by status: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return [];
     }
   }
 }
