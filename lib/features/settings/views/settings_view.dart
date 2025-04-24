@@ -1,330 +1,306 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/settings_controller.dart';
+import '../../../core/widgets/theme_toggle_button.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class SettingsView extends StatelessWidget {
+class SettingsView extends GetView<SettingsController> {
   const SettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SettingsController());
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        title: Text('Settings', style: theme.textTheme.titleLarge),
         elevation: 0,
-        title: Text(
-          'Settings',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Get.back(),
-        ),
+        actions: [
+          // Add theme toggle button in app bar
+          const ThemeToggleButton(),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            _buildSection(
-              context,
-              'Account Settings',
-              [
-                _buildSettingTile(
-                  context,
-                  'Change Password',
-                  'Update your account password',
-                  Icons.lock_outline,
-                  onTap: () => controller.showChangePasswordDialog(),
-                ),
-                _buildSettingTile(
-                  context,
-                  'Language',
-                  'English',
-                  Icons.language,
-                  onTap: () => controller.showLanguageSelection(),
-                ),
-                _buildSettingTile(
-                  context,
-                  'Time Zone',
-                  'UTC+3 East Africa Time',
-                  Icons.access_time,
-                  onTap: () => controller.showTimeZoneSelection(),
-                ),
-              ],
-            ),
-            _buildSection(
-              context,
-              'Notifications',
-              [
-                Obx(() => _buildSwitchTile(
-                      context,
-                      'Push Notifications',
+      body: ListView(
+        children: [
+          _buildSection(
+            context,
+            'App Preferences',
+            [
+              Obx(() => SwitchListTile(
+                    title:
+                        Text('Dark Mode', style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'Enable dark theme',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
+                      Icons.dark_mode_outlined,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: Get.isDarkMode,
+                    onChanged: controller.toggleDarkMode,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+              Obx(() => SwitchListTile(
+                    title: Text('Push Notifications',
+                        style: theme.textTheme.titleMedium),
+                    subtitle: Text(
                       'Receive push notifications',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
                       Icons.notifications_outlined,
-                      controller.pushNotifications.value,
-                      controller.togglePushNotifications,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: controller.isPushEnabled.value,
+                    onChanged: controller.togglePushNotifications,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+              ListTile(
+                title: Text('Language', style: theme.textTheme.titleMedium),
+                subtitle: Obx(() => Text(
+                      controller.currentLanguage.value,
+                      style: theme.textTheme.bodyMedium,
                     )),
-                Obx(() => _buildSwitchTile(
-                      context,
-                      'Email Notifications',
-                      'Receive email updates',
-                      Icons.email_outlined,
-                      controller.emailNotifications.value,
-                      controller.toggleEmailNotifications,
-                    )),
-                Obx(() => _buildSwitchTile(
-                      context,
-                      'Schedule Reminders',
-                      'Get reminded of upcoming schedules',
-                      Icons.schedule,
-                      controller.scheduleReminders.value,
-                      controller.toggleScheduleReminders,
-                    )),
-              ],
-            ),
-            _buildSection(
-              context,
-              'App Settings',
-              [
-                _buildSettingTile(
-                  context,
-                  'Theme',
-                  'Light',
-                  Icons.palette_outlined,
-                  onTap: () => controller.showThemeSelection(),
+                leading: Icon(
+                  Icons.language_outlined,
+                  color: theme.iconTheme.color,
                 ),
-                Obx(() => _buildSwitchTile(
-                      context,
-                      'Location Services',
-                      'Enable location tracking',
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.showLanguageSelector(context),
+              ),
+            ],
+          ),
+          _buildSection(
+            context,
+            'Vehicle Settings',
+            [
+              Obx(() => SwitchListTile(
+                    title: Text('Location Tracking',
+                        style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'Track vehicle locations',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
                       Icons.location_on_outlined,
-                      controller.locationServices.value,
-                      controller.toggleLocationServices,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: controller.isLocationTrackingEnabled.value,
+                    onChanged: controller.toggleLocationTracking,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+              Obx(() => SwitchListTile(
+                    title: Text('Maintenance Alerts',
+                        style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'Get vehicle maintenance notifications',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
+                      Icons.build_outlined,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: controller.isMaintenanceAlertsEnabled.value,
+                    onChanged: controller.toggleMaintenanceAlerts,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+              Obx(() => SwitchListTile(
+                    title:
+                        Text('Fuel Alerts', style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'Get low fuel notifications',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
+                      Icons.local_gas_station_outlined,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: controller.isFuelAlertsEnabled.value,
+                    onChanged: controller.toggleFuelAlerts,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+            ],
+          ),
+          _buildSection(
+            context,
+            'Data & Storage',
+            [
+              ListTile(
+                title: Text('Clear Cache', style: theme.textTheme.titleMedium),
+                subtitle: Text(
+                  'Free up space used by app cache',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                leading: Icon(
+                  Icons.cleaning_services_outlined,
+                  color: theme.iconTheme.color,
+                ),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.clearCache(),
+              ),
+              Obx(() => ListTile(
+                    title:
+                        Text('Data Usage', style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'App has used ${controller.dataUsage.value} of data',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    leading: Icon(
+                      Icons.data_usage_outlined,
+                      color: theme.iconTheme.color,
+                    ),
+                    trailing: Icon(Icons.arrow_forward_ios,
+                        size: 16, color: theme.iconTheme.color),
+                    onTap: () => controller.showDataUsageDetails(),
+                  )),
+              Obx(() => SwitchListTile(
+                    title: Text('Background Sync',
+                        style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      'Sync data in background',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    secondary: Icon(
+                      Icons.sync_outlined,
+                      color: theme.iconTheme.color,
+                    ),
+                    value: controller.isBackgroundSyncEnabled.value,
+                    onChanged: controller.toggleBackgroundSync,
+                    activeColor: theme.colorScheme.primary,
+                  )),
+            ],
+          ),
+          _buildSection(
+            context,
+            'Account Settings',
+            [
+              ListTile(
+                title:
+                    Text('Change Password', style: theme.textTheme.titleMedium),
+                subtitle: Text(
+                  'Update your account password',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                leading: Icon(
+                  Icons.lock_outline,
+                  color: theme.iconTheme.color,
+                ),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.showChangePasswordDialog(context),
+              ),
+              ListTile(
+                title: Text('Email Preferences',
+                    style: theme.textTheme.titleMedium),
+                subtitle: Text(
+                  'Manage email notifications',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                leading: Icon(
+                  Icons.email_outlined,
+                  color: theme.iconTheme.color,
+                ),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.showEmailPreferences(),
+              ),
+              ListTile(
+                title: Text('Account Information',
+                    style: theme.textTheme.titleMedium),
+                subtitle: Obx(() => Text(
+                      controller.userEmail,
+                      style: theme.textTheme.bodyMedium,
                     )),
-                _buildSettingTile(
-                  context,
-                  'Data Usage',
-                  'Manage how the app uses data',
-                  Icons.data_usage,
-                  onTap: () => controller.showDataUsage(),
+                leading: Icon(
+                  Icons.person_outline,
+                  color: theme.iconTheme.color,
                 ),
-              ],
-            ),
-            _buildSection(
-              context,
-              'Support',
-              [
-                _buildSettingTile(
-                  context,
-                  'Help Center',
-                  'Get help with the app',
-                  Icons.help_outline,
-                  onTap: () => controller.showHelpCenter(),
-                ),
-                _buildSettingTile(
-                  context,
-                  'Contact Support',
-                  'Reach out to our support team',
-                  Icons.support_agent,
-                  onTap: () => controller.showContactSupport(),
-                ),
-                _buildSettingTile(
-                  context,
-                  'About',
-                  'App version and information',
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.viewAccountInformation(),
+              ),
+            ],
+          ),
+          _buildSection(
+            context,
+            'About',
+            [
+              ListTile(
+                title: Text('App Version', style: theme.textTheme.titleMedium),
+                subtitle: Obx(() => Text(
+                      controller.appVersion.value,
+                      style: theme.textTheme.bodyMedium,
+                    )),
+                leading: Icon(
                   Icons.info_outline,
-                  onTap: () {
-                    _showAboutDialog(context);
-                  },
+                  color: theme.iconTheme.color,
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+                onTap: () => controller.checkForUpdates(),
+              ),
+              ListTile(
+                title: Text('Terms of Service',
+                    style: theme.textTheme.titleMedium),
+                subtitle: Text(
+                  'View app terms and conditions',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                leading: Icon(
+                  Icons.description_outlined,
+                  color: theme.iconTheme.color,
+                ),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.showTermsOfService(),
+              ),
+              ListTile(
+                title:
+                    Text('Privacy Policy', style: theme.textTheme.titleMedium),
+                subtitle: Text(
+                  'View app privacy policy',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                leading: Icon(
+                  Icons.privacy_tip_outlined,
+                  color: theme.iconTheme.color,
+                ),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: theme.iconTheme.color),
+                onTap: () => controller.showPrivacyPolicy(),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSection(
       BuildContext context, String title, List<Widget> children) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF4CAF50),
-                  fontWeight: FontWeight.bold,
-                ),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        Container(
-          color: Colors.white,
-          child: Column(
-            children: children,
-          ),
-        ),
-        const SizedBox(height: 16),
+        const Divider(),
+        ...children,
+        const SizedBox(height: 8),
       ],
-    );
-  }
-
-  Widget _buildSettingTile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon, {
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF4CAF50),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.black54,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.black54,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    bool value,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF4CAF50),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.black54,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF4CAF50),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'DDU Fleet Management',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Version 1.0.0',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '© 2024 DDU. All rights reserved.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.black54,
-                  ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 }

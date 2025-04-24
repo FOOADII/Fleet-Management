@@ -1,772 +1,541 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/services/firebase_auth_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsController extends GetxController {
-  final _auth = FirebaseAuth.instance;
+  final FirebaseAuthService _authService;
+  final SharedPreferences _prefs;
 
-  final RxBool pushNotifications = true.obs;
-  final RxBool emailNotifications = false.obs;
-  final RxBool scheduleReminders = true.obs;
-  final RxBool locationServices = true.obs;
-  final RxString currentLanguage = 'English'.obs;
-  final RxString currentTheme = 'Light'.obs;
-  final RxString timeZone = 'UTC+3 East Africa Time'.obs;
+  // App Preferences
+  final isPushEnabled = true.obs;
+  final currentLanguage = 'English'.obs;
 
-  // Map language names to locale codes
-  final Map<String, String> languageCodes = {
-    'English': 'en_US',
-    'አማርኛ': 'am_ET',
-    'Afaan Oromoo': 'om_ET',
-    'ትግርኛ': 'ti_ET',
-  };
+  // Vehicle Settings
+  final isLocationTrackingEnabled = true.obs;
+  final isMaintenanceAlertsEnabled = true.obs;
+  final isFuelAlertsEnabled = true.obs;
+
+  // Data & Storage
+  final dataUsage = '0 MB'.obs;
+  final isBackgroundSyncEnabled = true.obs;
+  final cacheSize = '0 MB'.obs;
+
+  // User Info
+  final RxString _userEmail = 'No email found'.obs;
+
+  // App Info
+  final appVersion = '1.0.0'.obs;
+
+  SettingsController(this._authService, this._prefs);
 
   @override
   void onInit() {
     super.onInit();
     loadSettings();
+    loadAppVersion();
+    calculateDataUsage();
+    calculateCacheSize();
+    updateUserEmail();
   }
 
-  Future<void> loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    pushNotifications.value = prefs.getBool('pushNotifications') ?? true;
-    emailNotifications.value = prefs.getBool('emailNotifications') ?? false;
-    scheduleReminders.value = prefs.getBool('scheduleReminders') ?? true;
-    locationServices.value = prefs.getBool('locationServices') ?? true;
-
-    // Load and apply saved language
-    String savedLanguage = prefs.getString('language') ?? 'English';
-    currentLanguage.value = savedLanguage;
-    _applyLanguage(savedLanguage);
-
-    currentTheme.value = prefs.getString('theme') ?? 'Light';
-    timeZone.value = prefs.getString('timeZone') ?? 'UTC+3 East Africa Time';
+  void updateUserEmail() {
+    _userEmail.value = _authService.currentUser?.email ?? 'No email found';
   }
 
-  void _applyLanguage(String language) {
-    final locale = languageCodes[language];
-    if (locale != null) {
-      final parts = locale.split('_');
-      if (parts.length == 2) {
-        Get.updateLocale(Locale(parts[0], parts[1]));
-      }
+  Future<void> loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      appVersion.value = '${packageInfo.version} (${packageInfo.buildNumber})';
+    } catch (e) {
+      appVersion.value = '1.0.0';
     }
   }
 
-  Future<void> changeLanguage(String language) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', language);
-    currentLanguage.value = language;
-    _applyLanguage(language);
+  void loadSettings() {
+    // Load saved settings from SharedPreferences
+    isPushEnabled.value = _prefs.getBool('isPushEnabled') ?? true;
+    currentLanguage.value = _prefs.getString('language') ?? 'English';
+    isLocationTrackingEnabled.value =
+        _prefs.getBool('isLocationTrackingEnabled') ?? true;
+    isMaintenanceAlertsEnabled.value =
+        _prefs.getBool('isMaintenanceAlertsEnabled') ?? true;
+    isFuelAlertsEnabled.value = _prefs.getBool('isFuelAlertsEnabled') ?? true;
+    isBackgroundSyncEnabled.value =
+        _prefs.getBool('isBackgroundSyncEnabled') ?? true;
+  }
 
-    // Show confirmation message in the new language
+  void toggleDarkMode(bool value) {
+    // Implementation using Get's theme system
+    Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
+    _prefs.setBool('isDarkMode', value);
+  }
+
+  void togglePushNotifications(bool value) {
+    isPushEnabled.value = value;
+    _prefs.setBool('isPushEnabled', value);
+    // Show a confirmation message
     Get.snackbar(
-      'success'.tr,
-      'language_changed'.tr,
-      backgroundColor: const Color(0xFF4CAF50),
+      'Notifications ${value ? 'Enabled' : 'Disabled'}',
+      value
+          ? 'You will now receive push notifications'
+          : 'Push notifications have been disabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
       colorText: Colors.white,
     );
   }
 
-  Future<void> togglePushNotifications(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('pushNotifications', value);
-    pushNotifications.value = value;
+  void toggleLocationTracking(bool value) {
+    isLocationTrackingEnabled.value = value;
+    _prefs.setBool('isLocationTrackingEnabled', value);
+    // Show a confirmation message
+    Get.snackbar(
+      'Location Tracking ${value ? 'Enabled' : 'Disabled'}',
+      value
+          ? 'Vehicle location tracking is now enabled'
+          : 'Vehicle location tracking has been disabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+      colorText: Colors.white,
+    );
   }
 
-  Future<void> toggleEmailNotifications(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('emailNotifications', value);
-    emailNotifications.value = value;
+  void toggleMaintenanceAlerts(bool value) {
+    isMaintenanceAlertsEnabled.value = value;
+    _prefs.setBool('isMaintenanceAlertsEnabled', value);
+    // Show a confirmation message
+    Get.snackbar(
+      'Maintenance Alerts ${value ? 'Enabled' : 'Disabled'}',
+      value
+          ? 'You will now receive maintenance alerts'
+          : 'Maintenance alerts have been disabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+      colorText: Colors.white,
+    );
   }
 
-  Future<void> toggleScheduleReminders(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('scheduleReminders', value);
-    scheduleReminders.value = value;
+  void toggleFuelAlerts(bool value) {
+    isFuelAlertsEnabled.value = value;
+    _prefs.setBool('isFuelAlertsEnabled', value);
+    // Show a confirmation message
+    Get.snackbar(
+      'Fuel Alerts ${value ? 'Enabled' : 'Disabled'}',
+      value
+          ? 'You will now receive low fuel alerts'
+          : 'Low fuel alerts have been disabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+      colorText: Colors.white,
+    );
   }
 
-  Future<void> toggleLocationServices(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('locationServices', value);
-    locationServices.value = value;
+  void toggleBackgroundSync(bool value) {
+    isBackgroundSyncEnabled.value = value;
+    _prefs.setBool('isBackgroundSyncEnabled', value);
+    // Show a confirmation message
+    Get.snackbar(
+      'Background Sync ${value ? 'Enabled' : 'Disabled'}',
+      value
+          ? 'App will now sync data in the background'
+          : 'Background data sync has been disabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+      colorText: Colors.white,
+    );
   }
 
-  Future<void> changeTheme(String theme) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme', theme);
-    currentTheme.value = theme;
-    // TODO: Implement actual theme change
-  }
+  void showLanguageSelector(BuildContext context) {
+    final theme = Theme.of(context);
 
-  Future<void> changeTimeZone(String newTimeZone) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('timeZone', newTimeZone);
-    timeZone.value = newTimeZone;
-  }
-
-  Future<void> changePassword(
-      String currentPassword, String newPassword) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null && user.email != null) {
-        // Reauthenticate user before changing password
-        final credential = EmailAuthProvider.credential(
-          email: user.email!,
-          password: currentPassword,
-        );
-        await user.reauthenticateWithCredential(credential);
-        await user.updatePassword(newPassword);
-        Get.back();
-        Get.snackbar(
-          'Success',
-          'Password updated successfully',
-          backgroundColor: const Color(0xFF4CAF50),
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update password: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  void showLanguageSelection() {
-    final languages = ['English', 'አማርኛ', 'Afaan Oromoo', 'ትግርኛ'];
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.language,
-                    color: Color(0xFF4CAF50),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Select Language',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const SizedBox(height: 24),
-            ...languages.map((language) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: language == currentLanguage.value
-                        ? const Color(0xFF4CAF50).withOpacity(0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    title: Text(
-                      language,
-                      style: Get.textTheme.titleMedium?.copyWith(
-                        color: Colors.black87,
-                        fontWeight: language == currentLanguage.value
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: language == currentLanguage.value
-                        ? Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      changeLanguage(language);
-                      Get.back();
-                    },
-                  ),
-                )),
-            const SizedBox(height: 8),
+            Text(
+              'Select Language',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: Text('English', style: theme.textTheme.titleMedium),
+              trailing: currentLanguage.value == 'English'
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () {
+                currentLanguage.value = 'English';
+                _prefs.setString('language', 'English');
+                Get.back();
+                Get.snackbar(
+                  'Language Changed',
+                  'App language has been set to English',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+            ),
+            ListTile(
+              title: Text('Swahili', style: theme.textTheme.titleMedium),
+              trailing: currentLanguage.value == 'Swahili'
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () {
+                currentLanguage.value = 'Swahili';
+                _prefs.setString('language', 'Swahili');
+                Get.back();
+                Get.snackbar(
+                  'Language Changed',
+                  'App language has been set to Swahili',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+            ),
+            ListTile(
+              title: Text('French', style: theme.textTheme.titleMedium),
+              trailing: currentLanguage.value == 'French'
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () {
+                currentLanguage.value = 'French';
+                _prefs.setString('language', 'French');
+                Get.back();
+                Get.snackbar(
+                  'Language Changed',
+                  'App language has been set to French',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+            ),
           ],
         ),
       ),
-      isScrollControlled: true,
     );
   }
 
-  void showThemeSelection() {
-    final themes = ['Light', 'Dark', 'System'];
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.palette_outlined,
-                    color: Color(0xFF4CAF50),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Select Theme',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ...themes.map((theme) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: theme == currentTheme.value
-                        ? const Color(0xFF4CAF50).withOpacity(0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    title: Text(
-                      theme,
-                      style: Get.textTheme.titleMedium?.copyWith(
-                        color: Colors.black87,
-                        fontWeight: theme == currentTheme.value
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: theme == currentTheme.value
-                        ? Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      changeTheme(theme);
-                      Get.back();
-                    },
-                  ),
-                )),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
-
-  void showTimeZoneSelection() {
-    final timeZones = [
-      'UTC+3 East Africa Time',
-      'UTC+0 Greenwich Mean Time',
-      'UTC+1 Central European Time',
-      'UTC+2 Eastern European Time',
-    ];
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.access_time,
-                    color: Color(0xFF4CAF50),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Select Time Zone',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ...timeZones.map((tz) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: tz == timeZone.value
-                        ? const Color(0xFF4CAF50).withOpacity(0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    title: Text(
-                      tz,
-                      style: Get.textTheme.titleMedium?.copyWith(
-                        color: Colors.black87,
-                        fontWeight: tz == timeZone.value
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: tz == timeZone.value
-                        ? Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      changeTimeZone(tz);
-                      Get.back();
-                    },
-                  ),
-                )),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
-
-  void showChangePasswordDialog() {
+  void showChangePasswordDialog(BuildContext context) {
+    final theme = Theme.of(context);
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.lock_outline,
-                color: Color(0xFF4CAF50),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Change Password'),
-          ],
-        ),
+        backgroundColor: theme.cardColor,
+        title: Text('Change Password', style: theme.textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: currentPasswordController,
+              obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Current Password',
-                labelStyle: const TextStyle(color: Colors.black54),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+                labelStyle: theme.textTheme.bodyMedium,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              obscureText: true,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: newPasswordController,
+              obscureText: true,
               decoration: InputDecoration(
                 labelText: 'New Password',
-                labelStyle: const TextStyle(color: Colors.black54),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+                labelStyle: theme.textTheme.bodyMedium,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              obscureText: true,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: confirmPasswordController,
+              obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Confirm New Password',
-                labelStyle: const TextStyle(color: Colors.black54),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+                labelStyle: theme.textTheme.bodyMedium,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              obscureText: true,
             ),
           ],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black54,
-            ),
-            child: const Text('Cancel'),
+            child: Text('Cancel',
+                style: TextStyle(color: theme.colorScheme.primary)),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
             onPressed: () {
-              if (newPasswordController.text ==
+              // Check if passwords match
+              if (newPasswordController.text !=
                   confirmPasswordController.text) {
-                changePassword(
-                  currentPasswordController.text,
-                  newPasswordController.text,
-                );
-              } else {
                 Get.snackbar(
                   'Error',
                   'New passwords do not match',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: theme.colorScheme.error,
+                  colorText: theme.colorScheme.onError,
                 );
+                return;
               }
+
+              // Implement password change
+              _changePassword(
+                currentPasswordController.text,
+                newPasswordController.text,
+              );
+              Get.back();
             },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF4CAF50),
-            ),
-            child: const Text('Change'),
+            child: const Text('Change Password'),
           ),
         ],
       ),
     );
   }
 
-  void showHelpCenter() {
-    Get.dialog(
-      AlertDialog(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.help_outline,
-                color: Color(0xFF4CAF50),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Help Center'),
-          ],
-        ),
-        content: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF4CAF50).withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'For assistance, you can:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.phone, size: 20, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 8),
-                  Text('+251 912 345 678'),
-                ],
-              ),
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.email, size: 20, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 8),
-                  Text('support@ddufleet.com'),
-                ],
-              ),
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 20, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 8),
-                  Text('Visit our office during working hours'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF4CAF50),
-            ),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _changePassword(
+      String currentPassword, String newPassword) async {
+    try {
+      // Here you would connect to your authentication service
+      // For demo purposes, we'll just show a success message
+
+      Get.snackbar(
+        'Success',
+        'Password changed successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to change password: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+      );
+    }
   }
 
-  void showContactSupport() {
-    final messageController = TextEditingController();
+  void showEmailPreferences() {
+    Get.toNamed('/settings/email-preferences');
+  }
+
+  void showTermsOfService() {
+    Get.toNamed('/settings/terms');
+  }
+
+  void showPrivacyPolicy() {
+    Get.toNamed('/settings/privacy');
+  }
+
+  String get userEmail => _userEmail.value;
+
+  void viewAccountInformation() {
+    Get.toNamed('/profile');
+  }
+
+  Future<void> calculateDataUsage() async {
+    // This would typically involve checking actual data usage from the device
+    // For demo purposes, we'll simulate some data usage values
+    await Future.delayed(const Duration(milliseconds: 500));
+    int usage = _prefs.getInt('dataUsage') ?? 0;
+    if (usage == 0) {
+      // Initialize with a random value first time
+      usage = 10 + (DateTime.now().millisecondsSinceEpoch % 100);
+      _prefs.setInt('dataUsage', usage);
+    }
+
+    dataUsage.value = '${usage} MB';
+  }
+
+  Future<void> calculateCacheSize() async {
+    // This would typically involve checking actual cache size
+    // For demo purposes, we'll simulate some cache values
+    await Future.delayed(const Duration(milliseconds: 300));
+    int size = _prefs.getInt('cacheSize') ?? 0;
+    if (size == 0) {
+      // Initialize with a random value first time
+      size = 5 + (DateTime.now().millisecondsSinceEpoch % 20);
+      _prefs.setInt('cacheSize', size);
+    }
+
+    cacheSize.value = '${size} MB';
+  }
+
+  void clearCache() async {
+    // Show a confirmation dialog
     Get.dialog(
       AlertDialog(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.support_agent,
-                color: Color(0xFF4CAF50),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Contact Support'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: messageController,
-              decoration: InputDecoration(
-                labelText: 'Message',
-                hintText: 'Describe your issue...',
-                labelStyle: const TextStyle(color: Colors.black54),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4CAF50)),
-                ),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+        title: Text('Clear Cache', style: Get.textTheme.titleLarge),
+        content: Text(
+          'This will clear ${cacheSize.value} of cached data. Continue?',
+          style: Get.textTheme.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black54,
-            ),
-            child: const Text('Cancel'),
+            child: Text('Cancel',
+                style: TextStyle(color: Get.theme.colorScheme.primary)),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.primary,
+              foregroundColor: Get.theme.colorScheme.onPrimary,
+            ),
             onPressed: () {
-              // TODO: Implement sending support message
+              // Simulate clearing cache
+              _prefs.setInt('cacheSize', 0);
+              calculateCacheSize();
               Get.back();
               Get.snackbar(
-                'Success',
-                'Support message sent successfully',
-                backgroundColor: const Color(0xFF4CAF50),
+                'Cache Cleared',
+                'App cache has been successfully cleared',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
                 colorText: Colors.white,
               );
             },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF4CAF50),
-            ),
-            child: const Text('Send'),
+            child: const Text('Clear'),
           ),
         ],
       ),
     );
   }
 
-  void showDataUsage() {
-    Get.dialog(
-      AlertDialog(
-        title: Row(
+  void showDataUsageDetails() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Get.theme.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.data_usage,
-                color: Color(0xFF4CAF50),
-                size: 24,
+                color: Get.theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 12),
-            const Text('Data Usage'),
+            Text(
+              'Data Usage',
+              style: Get.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Data usage statistics
+            ListTile(
+              title: Text('Total Usage', style: Get.textTheme.titleMedium),
+              trailing: Text(dataUsage.value, style: Get.textTheme.titleMedium),
+            ),
+            ListTile(
+              title: Text('Map Data', style: Get.textTheme.titleMedium),
+              trailing: Text(
+                  '${(int.parse(dataUsage.value.split(' ')[0]) * 0.6).toStringAsFixed(1)} MB',
+                  style: Get.textTheme.titleMedium),
+            ),
+            ListTile(
+              title: Text('Background Sync', style: Get.textTheme.titleMedium),
+              trailing: Text(
+                  '${(int.parse(dataUsage.value.split(' ')[0]) * 0.3).toStringAsFixed(1)} MB',
+                  style: Get.textTheme.titleMedium),
+            ),
+            ListTile(
+              title: Text('Other', style: Get.textTheme.titleMedium),
+              trailing: Text(
+                  '${(int.parse(dataUsage.value.split(' ')[0]) * 0.1).toStringAsFixed(1)} MB',
+                  style: Get.textTheme.titleMedium),
+            ),
+            const Divider(),
+            TextButton(
+              onPressed: () {
+                // Reset usage statistics
+                _prefs.setInt('dataUsage', 0);
+                calculateDataUsage();
+                Get.back();
+                Get.snackbar(
+                  'Usage Reset',
+                  'Data usage statistics have been reset',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+              child: Text(
+                'Reset Statistics',
+                style: TextStyle(color: Get.theme.colorScheme.primary),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  void checkForUpdates() {
+    Get.dialog(
+      AlertDialog(
+        title: Text('Check for Updates', style: Get.textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDataUsageItem(
-              icon: Icons.map,
-              title: 'Maps & Location',
-              usage: '250 MB',
+            Text(
+              'Current version: ${appVersion.value}',
+              style: Get.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 8),
-            _buildDataUsageItem(
-              icon: Icons.notifications,
-              title: 'Notifications',
-              usage: '50 MB',
-            ),
-            const SizedBox(height: 8),
-            _buildDataUsageItem(
-              icon: Icons.sync,
-              title: 'Background Sync',
-              usage: '100 MB',
+            const SizedBox(height: 16),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Checking for updates...',
+              style: Get.textTheme.bodyMedium,
             ),
           ],
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF4CAF50),
-            ),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
-  }
 
-  Widget _buildDataUsageItem({
-    required IconData icon,
-    required String title,
-    required String usage,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50).withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF4CAF50)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  usage,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    // Simulate checking for updates
+    Future.delayed(const Duration(seconds: 2), () {
+      Get.back();
+      Get.snackbar(
+        'Up to Date',
+        'You are running the latest version of the app',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.primary.withOpacity(0.7),
+        colorText: Colors.white,
+      );
+    });
   }
 }
