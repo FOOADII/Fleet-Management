@@ -47,7 +47,6 @@ class TrackingView extends GetView<TrackingController> {
           ],
         );
       }),
-      floatingActionButton: Obx(() => _buildTrackingFab(theme)),
     );
   }
 
@@ -311,32 +310,6 @@ class TrackingView extends GetView<TrackingController> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildTrackingFab(ThemeData theme) {
-    return FloatingActionButton.extended(
-      heroTag: 'tracking_fab',
-      onPressed: () {
-        if (controller.isTracking.value) {
-          controller.stopTracking();
-        } else {
-          controller.startTracking();
-        }
-      },
-      backgroundColor:
-          controller.isTracking.value ? Colors.red : theme.colorScheme.primary,
-      label: Text(
-        controller.isTracking.value ? 'Stop Tracking' : 'Start Tracking',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.onPrimary,
-        ),
-      ),
-      icon: Icon(
-        controller.isTracking.value ? Icons.location_off : Icons.location_on,
-        color: theme.colorScheme.onPrimary,
-      ),
     );
   }
 }

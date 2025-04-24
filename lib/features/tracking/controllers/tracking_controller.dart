@@ -14,7 +14,6 @@ class TrackingController extends GetxController {
   final RxMap<String, Marker> markers = <String, Marker>{}.obs;
   final RxList<Map<String, dynamic>> activeDrivers =
       <Map<String, dynamic>>[].obs;
-  final RxBool isTracking = false.obs;
   final RxString selectedDriverId = ''.obs;
 
   late GoogleMapController mapController;
@@ -72,11 +71,6 @@ class TrackingController extends GetxController {
 
       // Load active drivers
       await loadActiveDrivers();
-
-      // Start tracking if user is a driver
-      if (_authService.currentUser != null && _authService.isDriver.value) {
-        startTracking();
-      }
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -177,48 +171,6 @@ class TrackingController extends GetxController {
     }
   }
 
-  Future<void> startTracking() async {
-    try {
-      await _trackingService.startTracking();
-      isTracking.value = _trackingService.isTracking.value;
-
-      if (isTracking.value) {
-        Get.snackbar(
-          'Tracking Started',
-          'Your location is now being shared',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to start tracking: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  Future<void> stopTracking() async {
-    try {
-      await _trackingService.stopTracking();
-      isTracking.value = _trackingService.isTracking.value;
-
-      if (!isTracking.value) {
-        Get.snackbar(
-          'Tracking Stopped',
-          'Your location is no longer being shared',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to stop tracking: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
   void trackDriver(String driverId) {
     if (driverId.isEmpty) return;
 
@@ -259,7 +211,6 @@ class TrackingController extends GetxController {
   @override
   void onClose() {
     mapController.dispose();
-    stopTracking();
     super.onClose();
   }
 }
