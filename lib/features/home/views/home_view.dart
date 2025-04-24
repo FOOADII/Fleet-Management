@@ -39,143 +39,180 @@ class HomeView extends GetView<HomeController> {
                         top: Radius.circular(20),
                       ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: theme.dividerColor,
-                            borderRadius: BorderRadius.circular(2),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: theme.dividerColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                        ),
-                        // User Profile Header
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 30,
-                              backgroundColor:
-                                  theme.colorScheme.primary.withOpacity(0.1),
-                              child: Text(
-                                controller.userDisplayName[0].toUpperCase(),
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: theme.colorScheme.primary,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                          // User Profile Header
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.1),
+                                child: Text(
+                                  controller.userDisplayName[0].toUpperCase(),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: theme.colorScheme.primary,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    controller.userDisplayName,
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      controller.userDisplayName,
+                                      style:
+                                          theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    controller.userEmail ?? '',
-                                    style: theme.textTheme.bodyMedium,
-                                  ),
-                                ],
+                                    Text(
+                                      controller.userEmail ?? '',
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        // Menu Items
-                        _ProfileMenuItem(
-                          icon: Icons.person_outline_rounded,
-                          title: 'profile'.tr,
-                          onTap: () {
-                            Get.back();
-                            Get.toNamed('/profile');
-                          },
-                        ),
-                        _ProfileMenuItem(
-                          icon: Icons.settings_outlined,
-                          title: 'settings'.tr,
-                          onTap: () {
-                            Get.back();
-                            Get.toNamed('/settings');
-                          },
-                        ),
-                        _ProfileMenuItem(
-                          icon: Icons.notifications_none_rounded,
-                          title: 'notifications'.tr,
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Obx(() => Text(
-                                  '${notificationsController.unreadCount}',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                  ),
-                                )),
+                            ],
                           ),
-                          onTap: () {
-                            Get.back();
-                            Get.toNamed('/notifications');
-                          },
-                        ),
-                        const Divider(),
-                        _ProfileMenuItem(
-                          icon: Icons.help_outline_rounded,
-                          title: 'Help & Support',
-                          onTap: () {
-                            Get.back();
-                            // TODO: Implement help & support
-                            Get.snackbar(
-                              'Coming Soon',
-                              'Help & Support will be available soon',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                          },
-                        ),
-                        _ProfileMenuItem(
-                          icon: Icons.logout_rounded,
-                          title: 'Logout',
-                          textColor: Colors.red,
-                          onTap: () {
-                            Get.back();
-                            Get.dialog(
-                              AlertDialog(
-                                title: const Text('Logout'),
-                                content: const Text(
-                                    'Are you sure you want to logout?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Get.back(),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Get.back();
-                                      controller.handleSignOut();
-                                    },
-                                    child: Text(
-                                      'Logout',
-                                      style: TextStyle(color: Colors.red[700]),
-                                    ),
-                                  ),
-                                ],
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          // Menu Items
+                          _ProfileMenuItem(
+                            icon: Icons.person_outline_rounded,
+                            title: 'Profile',
+                            onTap: () {
+                              Get.back();
+                              Get.toNamed('/profile');
+                            },
+                          ),
+                          _ProfileMenuItem(
+                            icon: Icons.settings_outlined,
+                            title: 'Settings',
+                            onTap: () {
+                              Get.back();
+                              Get.toNamed('/settings');
+                            },
+                          ),
+                          _ProfileMenuItem(
+                            icon: Icons.notifications_none_rounded,
+                            title: 'Notifications',
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
                               ),
-                            );
-                          },
-                        ),
-                      ],
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Obx(() => Text(
+                                    '${notificationsController.unreadCount}',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  )),
+                            ),
+                            onTap: () {
+                              Get.back();
+                              Get.toNamed('/notifications');
+                            },
+                          ),
+                          const Divider(),
+                          _ProfileMenuItem(
+                            icon: Icons.help_outline_rounded,
+                            title: 'Help & Support',
+                            onTap: () {
+                              Get.back();
+                              Get.dialog(
+                                AlertDialog(
+                                  title: Text('Help & Support'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _SupportOption(
+                                        icon: Icons.phone_outlined,
+                                        title: 'Call Support',
+                                        subtitle: '+251 973126679',
+                                        onTap: () =>
+                                            controller.launchPhoneCall(),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _SupportOption(
+                                        icon: Icons.email_outlined,
+                                        title: 'Email Support',
+                                        subtitle: 'support@ddufleet.com',
+                                        onTap: () => controller.launchEmail(),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _SupportOption(
+                                        icon: Icons.chat_outlined,
+                                        title: 'Live Chat',
+                                        subtitle: 'Available 24/7',
+                                        onTap: () => controller.openLiveChat(),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Get.back(),
+                                      child: Text('Close'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          _ProfileMenuItem(
+                            icon: Icons.logout_rounded,
+                            title: 'Logout',
+                            textColor: Colors.red,
+                            onTap: () {
+                              Get.back();
+                              Get.dialog(
+                                AlertDialog(
+                                  title: const Text('Logout'),
+                                  content: const Text(
+                                      'Are you sure you want to logout?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Get.back(),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.back();
+                                        controller.handleSignOut();
+                                      },
+                                      child: Text(
+                                        'Logout',
+                                        style:
+                                            TextStyle(color: Colors.red[700]),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -981,6 +1018,71 @@ class _ProfileMenuItem extends StatelessWidget {
           Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: theme.iconTheme.color?.withOpacity(0.5)),
       onTap: onTap,
+    );
+  }
+}
+
+class _SupportOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SupportOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: theme.colorScheme.primary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

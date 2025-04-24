@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
+import '../../../features/tasks/views/tasks_view.dart';
+import '../../../features/tasks/bindings/tasks_binding.dart';
+import '../../../features/tasks/controllers/tasks_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,6 +16,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   late GoogleMapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize TasksBinding when HomeScreen is created
+    TasksBinding().dependencies();
+  }
 
   final List<_ServiceItem> _services = [
     _ServiceItem(
@@ -74,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Get.toNamed('/transport');
         break;
       case 'Maintenance':
-        Get.toNamed('/maintenance');
+        Get.toNamed('/maintenance-request');
         break;
       case 'Parts Store':
         Get.toNamed('/parts-store');
@@ -113,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 8,
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        selectedItemColor: AppTheme.primaryColor,
+        selectedItemColor: AppColors.primaryColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
@@ -171,76 +181,176 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome back',
-                        style: TextStyle(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          fontSize: 18,
-                        ),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Fleet Manager',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: AppColors.primaryColor,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Text(
+                          'Fleet Manager',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.1),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.black87,
+                  child: Stack(
+                    children: [
+                      const Icon(
+                        Icons.notifications_none,
+                        color: Colors.black87,
+                        size: 24,
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 12,
+                            minHeight: 12,
+                          ),
+                          child: const Text(
+                            '2',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryColor.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Row(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Fleet Overview',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
                           children: [
-                            _buildStatItem('15', 'Vehicles'),
-                            const SizedBox(width: 24),
-                            _buildStatItem('8', 'Active'),
-                            const SizedBox(width: 24),
-                            _buildStatItem('3', 'Maintenance'),
+                            Icon(
+                              Icons.refresh,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Refresh',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem('15', 'Vehicles'),
+                      _buildStatItem('8', 'Active'),
+                      _buildStatItem('3', 'Maintenance'),
+                    ],
                   ),
                 ],
               ),
@@ -360,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Fuel Efficiency',
                   '85%',
                   0.85,
-                  AppTheme.primaryColor,
+                  AppColors.primaryColor,
                 ),
               ],
             ),
@@ -429,14 +539,21 @@ class _HomeScreenState extends State<HomeScreen> {
             subtitle: 'Isuzu Truck - XYZ 789',
             icon: Icons.local_gas_station,
             date: '5 hours ago',
-            color: AppTheme.primaryColor,
+            color: AppColors.primaryColor,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActivityTab() => const Center(child: Text('Activity'));
+  Widget _buildActivityTab() {
+    // Ensure TasksBinding is initialized before showing TasksView
+    if (!Get.isRegistered<TasksController>()) {
+      TasksBinding().dependencies();
+    }
+    return const TasksView();
+  }
+
   Widget _buildPaymentTab() => const Center(child: Text('Payment'));
   Widget _buildMessagesTab() => const Center(child: Text('Messages'));
   Widget _buildAccountTab() => const Center(child: Text('Account'));
