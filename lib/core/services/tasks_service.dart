@@ -114,6 +114,37 @@ class TasksService extends GetxService {
     }
   }
 
+  // Create a new task
+  Future<void> createTask(Map<String, dynamic> taskData) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw Exception('User not authenticated');
+
+      // Prepare the task data
+      final task = {
+        ...taskData,
+        'assignedTo': userId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+        // Convert DateTime to Timestamp for Firestore
+        'dueDate': taskData['dueDate'] != null
+            ? Timestamp.fromDate(taskData['dueDate'] as DateTime)
+            : null,
+      };
+
+      // Add the task to Firestore
+      final docRef = await _firestore.collection('tasks').add(task);
+      print('Created task with ID: ${docRef.id}'); // Debug print
+
+      // Reload tasks to update the list
+      await loadTasks();
+    } catch (e) {
+      print('Error creating task: $e'); // Debug print
+      error.value = 'Failed to create task: ${e.toString()}';
+      throw Exception('Failed to create task: ${e.toString()}');
+    }
+  }
+
   // Stream tasks in real-time
   Stream<List<Map<String, dynamic>>> streamTasks() {
     final userId = currentUserId;
