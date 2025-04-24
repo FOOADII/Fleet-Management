@@ -1,25 +1,33 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 class ProfileController extends GetxController {
-  final AuthService _authService;
-  final Rxn<User> currentUser = Rxn<User>();
-  final RxBool isLoading = false.obs;
+  final AuthService authService;
+  late final SharedPreferences _prefs;
 
-  ProfileController({required AuthService authService})
-      : _authService = authService;
+  ProfileController({required this.authService});
+
+  final Rx<User?> currentUser = Rx<User?>(null);
+  final RxString profileImageUrl = ''.obs;
+  final RxString currentLanguage = 'en'.obs;
+  final RxBool isDarkMode = false.obs;
+  final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Initialize with current user
-    currentUser.value = _authService.currentUser;
-    // Listen to auth state changes
-    _authService.authStateChanges.listen((user) {
-      currentUser.value = user;
-    });
+    _prefs = Get.find<SharedPreferences>();
+    currentUser.value = authService.currentUser;
+    _loadUserPreferences();
+  }
+
+  void _loadUserPreferences() {
+    isDarkMode.value = _prefs.getBool('isDarkMode') ?? false;
+    currentLanguage.value = _prefs.getString('language') ?? 'en';
+    profileImageUrl.value = _prefs.getString('profileImageUrl') ?? '';
   }
 
   Future<void> updateProfile({
@@ -50,10 +58,86 @@ class ProfileController extends GetxController {
     }
   }
 
+  Future<void> updateProfilePicture() async {
+    // TODO: Implement image picker and upload functionality
+    Get.snackbar(
+      'Coming Soon',
+      'Set Profile Picture feature will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  String getLanguageName(String code) {
+    switch (code) {
+      case 'en':
+        return 'English';
+      case 'am':
+        return 'አማርኛ';
+      case 'or':
+        return 'Afaan Oromoo';
+      case 'es':
+        return 'Español';
+      default:
+        return 'English';
+    }
+  }
+
+  Future<void> updateLanguage(String languageCode) async {
+    try {
+      currentLanguage.value = languageCode;
+      await _prefs.setString('language', languageCode);
+      Get.updateLocale(Locale(languageCode));
+      Get.snackbar(
+        'Success',
+        'Language updated to ${getLanguageName(languageCode)}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update language. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void toggleTheme() {
+    isDarkMode.value = !isDarkMode.value;
+    _prefs.setBool('isDarkMode', isDarkMode.value);
+    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+  }
+
+  Future<void> contactSupport() async {
+    // TODO: Implement support contact functionality
+    Get.snackbar(
+      'Coming Soon',
+      'Support contact feature will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  Future<void> showFAQs() async {
+    // TODO: Implement FAQs screen
+    Get.snackbar(
+      'Coming Soon',
+      'FAQs feature will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  Future<void> showUserGuide() async {
+    // TODO: Implement user guide screen
+    Get.snackbar(
+      'Coming Soon',
+      'User guide feature will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   Future<void> signOut() async {
     try {
       isLoading.value = true;
-      await _authService.signOut();
+      await authService.signOut();
       Get.offAllNamed('/login');
     } catch (e) {
       Get.snackbar(
@@ -93,15 +177,6 @@ class ProfileController extends GetxController {
     Get.snackbar(
       'Coming Soon',
       'Notification settings will be available in the next update',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
-
-  void updateLanguage() {
-    // TODO: Implement language settings
-    Get.snackbar(
-      'Coming Soon',
-      'Language settings will be available in the next update',
       snackPosition: SnackPosition.BOTTOM,
     );
   }

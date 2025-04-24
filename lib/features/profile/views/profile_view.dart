@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/routes/app_pages.dart';
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({Key? key}) : super(key: key);
@@ -10,218 +11,222 @@ class ProfileView extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        centerTitle: true,
-        elevation: 0,
+        title: Text('profile'.tr),
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Profile Header Card
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowColor,
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Profile Picture
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor:
-                            AppColors.primaryColor.withOpacity(0.1),
-                        child: const Icon(
-                          Icons.person,
-                          size: 50,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.edit,
-                            size: 20,
-                            color: AppColors.whiteTextColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // User Info
-                  Obx(() => Text(
-                        controller.currentUser.value?.displayName ??
-                            'User Name',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryTextColor,
-                        ),
-                      )),
-                  const SizedBox(height: 4),
-                  Obx(() => Text(
-                        controller.currentUser.value?.email ??
-                            'email@example.com',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.secondaryTextColor,
-                        ),
-                      )),
-                ],
-              ),
-            ),
-            // Settings List
-            Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowColor,
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  _buildSettingsTile(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notifications',
-                    onTap: () => controller.updateNotificationSettings(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.language_outlined,
-                    title: 'Language',
-                    onTap: () => controller.updateLanguage(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.palette_outlined,
-                    title: 'Theme',
-                    onTap: () => controller.updateTheme(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    onTap: () => controller.showHelpAndSupport(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.logout,
-                    title: 'Sign Out',
-                    onTap: () => _showSignOutDialog(context),
-                    textColor: AppColors.errorColor,
-                    iconColor: AppColors.errorColor,
-                  ),
-                ],
-              ),
-            ),
+            _buildProfileHeader(),
+            const SizedBox(height: 20),
+            _buildSettingsList(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingsTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? textColor,
-    Color? iconColor,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: iconColor ?? AppColors.primaryColor,
+  Widget _buildProfileHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Obx(() => CircleAvatar(
+                    radius: 50,
+                    backgroundImage: controller.profileImageUrl.value.isNotEmpty
+                        ? NetworkImage(controller.profileImageUrl.value)
+                        : null,
+                    child: controller.profileImageUrl.value.isEmpty
+                        ? const Icon(Icons.person, size: 50)
+                        : null,
+                  )),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(Get.context!).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.camera_alt, color: Colors.white),
+                    onPressed: controller.updateProfilePicture,
+                    tooltip: 'set_profile_picture'.tr,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Obx(() => Text(
+                controller.currentUser.value?.displayName ?? 'User',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              )),
+          const SizedBox(height: 8),
+          Obx(() => Text(
+                controller.currentUser.value?.email ?? '',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(Get.context!).colorScheme.secondary,
+                ),
+              )),
+        ],
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: textColor ?? AppColors.primaryTextColor,
-          fontSize: 16,
+    );
+  }
+
+  Widget _buildSettingsList(BuildContext context) {
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.notifications),
+          title: Text('notifications'.tr),
+          subtitle: Text('manage_notifications'.tr),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Get.toNamed('/notifications'),
         ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppColors.secondaryTextColor,
-      ),
-      onTap: onTap,
+        ListTile(
+          leading: const Icon(Icons.language),
+          title: Text('language'.tr),
+          subtitle: Obx(() => Text('current_language'.trParams({
+                'language':
+                    controller.getLanguageName(controller.currentLanguage.value)
+              }))),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showLanguageDialog(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.dark_mode),
+          title: Text('theme'.tr),
+          subtitle: Obx(() => Text(
+              controller.isDarkMode.value ? 'dark_mode'.tr : 'light_mode'.tr)),
+          trailing: Obx(() => Switch(
+                value: controller.isDarkMode.value,
+                onChanged: (_) => controller.toggleTheme(),
+              )),
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.help),
+          title: Text('help_support'.tr),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showHelpSupportDialog(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.logout, color: Colors.red),
+          title: Text('sign_out'.tr, style: const TextStyle(color: Colors.red)),
+          onTap: () => _showSignOutDialog(context),
+        ),
+      ],
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(
-      height: 1,
-      thickness: 1,
-      indent: 16,
-      endIndent: 16,
-      color: AppColors.dividerColor,
-    );
-  }
-
-  Future<void> _showSignOutDialog(BuildContext context) async {
-    return showDialog(
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Sign Out',
-            style: TextStyle(
-              color: AppColors.primaryTextColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            'Are you sure you want to sign out?',
-            style: TextStyle(color: AppColors.secondaryTextColor),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppColors.primaryColor),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                controller.signOut();
+      builder: (context) => AlertDialog(
+        title: Text('select_language'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('English'),
+              onTap: () {
+                controller.updateLanguage('en');
+                Get.back();
               },
-              child: const Text(
-                'Sign Out',
-                style: TextStyle(color: AppColors.errorColor),
-              ),
+            ),
+            ListTile(
+              title: const Text('አማርኛ'),
+              onTap: () {
+                controller.updateLanguage('am');
+                Get.back();
+              },
+            ),
+            ListTile(
+              title: const Text('Afaan Oromoo'),
+              onTap: () {
+                controller.updateLanguage('or');
+                Get.back();
+              },
+            ),
+            ListTile(
+              title: const Text('Español'),
+              onTap: () {
+                controller.updateLanguage('es');
+                Get.back();
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  void _showHelpSupportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('help_support'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.contact_support),
+              title: Text('contact_support'.tr),
+              onTap: () {
+                Get.back();
+                controller.contactSupport();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.question_answer),
+              title: Text('faqs'.tr),
+              onTap: () {
+                Get.back();
+                controller.showFAQs();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.book),
+              title: Text('user_guide'.tr),
+              onTap: () {
+                Get.back();
+                controller.showUserGuide();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSignOutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('sign_out'.tr),
+        content: Text('sign_out_confirm'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              controller.signOut();
+            },
+            child:
+                Text('sign_out'.tr, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
