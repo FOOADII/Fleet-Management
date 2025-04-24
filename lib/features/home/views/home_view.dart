@@ -1,1568 +1,744 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../tasks/views/tasks_view.dart';
-import '../../maintenance/views/maintenance_view.dart';
-import '../../location/views/location_view.dart';
-import '../../location/bindings/location_binding.dart';
-import '../../tasks/bindings/tasks_binding.dart';
-import '../../maintenance/bindings/maintenance_binding.dart';
-import '../../fuel/views/fuel_tracking_view.dart';
-import '../../fuel/bindings/fuel_binding.dart';
 import '../controllers/home_controller.dart';
-import '_home_content.dart';
-import '../services/vehicle_service.dart';
-import '../services/sample_data_service.dart';
-import '../services/notification_service.dart';
-import '../../profile/views/profile_view.dart';
-import '../../settings/views/settings_view.dart';
-import '../../settings/bindings/settings_binding.dart';
+import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/theme_toggle_button.dart';
+import '../../tasks/views/tasks_view.dart';
+import '../../tracking/views/tracking_view.dart';
+import '../../maintenance/views/maintenance_view.dart';
+import '../../fuel/views/fuel_tracking_view.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../notifications/controllers/notifications_controller.dart';
 
-class Activity {
-  final String title;
-  final String subtitle;
-  final String time;
-  final IconData icon;
-  final Color color;
-
-  const Activity({
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.icon,
-    required this.color,
-  });
-}
-
-class HomeView extends StatefulWidget {
+class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
   @override
-  State<HomeView> createState() => _HomeViewState();
-}
-
-class _HomeViewState extends State<HomeView> {
-  int _currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize all required bindings when the home view is created
-    LocationBinding().dependencies();
-    TasksBinding().dependencies();
-    MaintenanceBinding().dependencies();
-    FuelBinding().dependencies();
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<HomeController>();
+    final notificationsController = Get.find<NotificationsController>();
+    final theme = Theme.of(context);
+    final isDark = Get.isDarkMode;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: _currentIndex == 0
-          ? AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              title: Row(
-                children: [
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: 0,
+        title: Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                Get.bottomSheet(
                   Container(
-                    padding: const EdgeInsets.all(3),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF4CAF50).withOpacity(0.2),
-                        width: 2,
+                      color: theme.cardColor,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
-                      child: Text(
-                        'FG',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: const Color(0xFF4CAF50),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: theme.dividerColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        // User Profile Header
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor:
+                                  theme.colorScheme.primary.withOpacity(0.1),
+                              child: Text(
+                                controller.userDisplayName[0].toUpperCase(),
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: theme.colorScheme.primary,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
-                      ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    controller.userDisplayName,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    controller.userEmail ?? '',
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        const Divider(),
+                        // Menu Items
+                        _ProfileMenuItem(
+                          icon: Icons.person_outline_rounded,
+                          title: 'profile'.tr,
+                          onTap: () {
+                            Get.back();
+                            Get.toNamed('/profile');
+                          },
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.settings_outlined,
+                          title: 'settings'.tr,
+                          onTap: () {
+                            Get.back();
+                            Get.toNamed('/settings');
+                          },
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.notifications_none_rounded,
+                          title: 'notifications'.tr,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Obx(() => Text(
+                                  '${notificationsController.unreadCount}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                )),
+                          ),
+                          onTap: () {
+                            Get.back();
+                            Get.toNamed('/notifications');
+                          },
+                        ),
+                        const Divider(),
+                        _ProfileMenuItem(
+                          icon: Icons.help_outline_rounded,
+                          title: 'Help & Support',
+                          onTap: () {
+                            Get.back();
+                            // TODO: Implement help & support
+                            Get.snackbar(
+                              'Coming Soon',
+                              'Help & Support will be available soon',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          },
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.logout_rounded,
+                          title: 'Logout',
+                          textColor: Colors.red,
+                          onTap: () {
+                            Get.back();
+                            Get.dialog(
+                              AlertDialog(
+                                title: const Text('Logout'),
+                                content: const Text(
+                                    'Are you sure you want to logout?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Get.back(),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Get.back();
+                                      controller.handleSignOut();
+                                    },
+                                    child: Text(
+                                      'Logout',
+                                      style: TextStyle(color: Colors.red[700]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
+                );
+              },
+              child: Row(
+                children: [
+                  Obx(() => CircleAvatar(
+                        radius: 20,
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.1),
+                        child: Text(
+                          controller.userDisplayName[0].toUpperCase(),
+                          style: GoogleFonts.plusJakartaSans(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Welcome back',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.black54,
+                        'Welcome back,',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      Obx(() => Text(
+                            controller.userDisplayName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
-                      ),
-                      Text(
-                        'Fuad Getachew',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
+                          )),
                     ],
                   ),
                 ],
               ),
-              actions: [
+            ),
+            const Spacer(),
+            const ThemeToggleButton(),
+            Stack(
+              children: [
                 IconButton(
-                  icon: Stack(
-                    children: [
-                      const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.black,
+                  icon: Icon(Icons.notifications_none_rounded,
+                      color: theme.iconTheme.color),
+                  onPressed: () => Get.toNamed('/notifications'),
+                ),
+                Obx(() {
+                  final unreadCount = notificationsController.unreadCount.value;
+                  if (unreadCount == 0) return const SizedBox.shrink();
+
+                  return Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
                       ),
-                      Obx(() {
-                        final unreadCount =
-                            Get.find<NotificationService>().unreadCount.value;
-                        return unreadCount > 0
-                            ? Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF4CAF50),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    unreadCount.toString(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                        ),
-                                  ),
-                                ),
-                              )
-                            : const SizedBox.shrink();
-                      }),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : unreadCount.toString(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ],
+        ),
+      ),
+      body: Obx(
+        () => IndexedStack(
+          index: controller.currentIndex.value,
+          children: const [
+            _HomeContent(),
+            TasksView(),
+            TrackingView(),
+            MaintenanceView(),
+            FuelTrackingView(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Obx(
+        () => Theme(
+          data: Theme.of(context).copyWith(
+            navigationBarTheme: NavigationBarThemeData(
+              height: 60,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              iconTheme: MaterialStateProperty.resolveWith((states) {
+                return const IconThemeData(size: 22);
+              }),
+              labelTextStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                (Set<MaterialState> states) {
+                  return TextStyle(
+                    fontSize: 11,
+                    height: 1.0,
+                  );
+                },
+              ),
+            ),
+          ),
+          child: NavigationBar(
+            elevation: 0,
+            height: 60,
+            backgroundColor: theme.cardColor,
+            indicatorColor: theme.colorScheme.primary.withOpacity(0.1),
+            selectedIndex: controller.currentIndex.value,
+            onDestinationSelected: controller.changePage,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.home_rounded,
+                    size: 22, color: theme.colorScheme.primary),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.assignment_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.assignment_rounded,
+                    size: 22, color: theme.colorScheme.primary),
+                label: 'Tasks',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.location_on_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.location_on_rounded,
+                    size: 22, color: theme.colorScheme.primary),
+                label: 'Tracking',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.build_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.build_rounded,
+                    size: 22, color: theme.colorScheme.primary),
+                label: 'Maintenance',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.local_gas_station_outlined,
+                    size: 22, color: theme.iconTheme.color),
+                selectedIcon: Icon(Icons.local_gas_station_rounded,
+                    size: 22, color: theme.colorScheme.primary),
+                label: 'Fuel',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeContent extends GetView<HomeController> {
+  const _HomeContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = screenWidth > 600 ? 24.0 : 16.0;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        await controller.loadQuickStats();
+        await controller.loadRecentActivities();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fleet Overview Card
+            Padding(
+              padding: EdgeInsets.all(padding),
+              child: _FleetOverviewCard(),
+            ),
+
+            // Quick Access Boxes
+            Padding(
+              padding: EdgeInsets.all(padding),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Obx(() => _QuickAccessBox(
+                          title: 'vehicle_status'.tr,
+                          value:
+                              '${controller.quickStats['activeVehicles']}/20',
+                          subtitle: 'active_vehicles'.tr,
+                          icon: Icons.local_shipping_rounded,
+                          color: Colors.blue,
+                          onTap: () => Get.toNamed('/vehicles'),
+                        )),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Obx(() => _QuickAccessBox(
+                          title: 'todays_tasks'.tr,
+                          value: '${controller.quickStats['pendingTasks']}',
+                          subtitle: 'pending_tasks'.tr,
+                          icon: Icons.assignment_rounded,
+                          color: Colors.orange,
+                          onTap: () =>
+                              controller.changePage(1), // Navigate to Tasks tab
+                        )),
+                  ),
+                ],
+              ),
+            ),
+
+            // Additional Quick Access Boxes
+            Padding(
+              padding: EdgeInsets.all(padding),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Obx(() => _QuickAccessBox(
+                          title: 'fuel_alerts'.tr,
+                          value: '${controller.quickStats['fuelAlerts']}',
+                          subtitle: 'low_fuel'.tr,
+                          icon: Icons.local_gas_station_rounded,
+                          color: Colors.red,
+                          onTap: () =>
+                              controller.changePage(4), // Navigate to Fuel tab
+                        )),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Obx(() => _QuickAccessBox(
+                          title: 'maintenance_due'.tr,
+                          value: '${controller.quickStats['maintenanceDue']}',
+                          subtitle: 'vehicles_due'.tr,
+                          icon: Icons.build_rounded,
+                          color: Colors.purple,
+                          onTap: () => controller
+                              .changePage(3), // Navigate to Maintenance tab
+                        )),
+                  ),
+                ],
+              ),
+            ),
+
+            // Recent Activity
+            Padding(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'recent_activity'.tr,
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      TextButton.icon(
+                        onPressed: () => Get.toNamed('/activity'),
+                        icon: Icon(Icons.history_rounded,
+                            color: theme.colorScheme.primary),
+                        label: Text(
+                          'view_all'.tr,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  onPressed: () {
-                    _showNotificationsDialog(context);
-                  },
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.person_outline,
-                    color: Colors.black,
-                  ),
-                  offset: const Offset(0, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  color: Colors.white,
-                  elevation: 3,
-                  position: PopupMenuPosition.under,
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<String>(
-                      value: 'profile',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.person, color: Color(0xFF4CAF50)),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Profile',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.black87,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'settings',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.settings, color: Color(0xFF4CAF50)),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Settings',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.black87,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(height: 0.5),
-                    PopupMenuItem<String>(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.logout, color: Colors.red),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Logout',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.red,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'profile':
-                        Get.to(() => const ProfileView());
-                        break;
-                      case 'settings':
-                        Get.to(
-                          () => const SettingsView(),
-                          binding: SettingsBinding(),
-                        );
-                        break;
-                      case 'logout':
-                        controller.handleSignOut();
-                        break;
-                    }
-                  },
-                ),
-                const SizedBox(width: 8),
-              ],
-            )
-          : null,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _HomeContent(),
-          const TasksView(),
-          const LocationView(),
-          const MaintenanceView(),
-          const FuelTrackingView(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
-        backgroundColor: const Color(0xFFF5F5F5),
-        selectedItemColor: const Color(0xFF4CAF50),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.task_outlined),
-            activeIcon: Icon(Icons.task),
-            label: 'Tasks',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined),
-            activeIcon: Icon(Icons.location_on),
-            label: 'Location',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.build_outlined),
-            activeIcon: Icon(Icons.build),
-            label: 'Maintenance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_gas_station_outlined),
-            activeIcon: Icon(Icons.local_gas_station),
-            label: 'Fuel',
-          ),
-        ],
+                  const SizedBox(height: 16),
+                  Obx(() => ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.recentActivities.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final activity = controller.recentActivities[index];
+                          return _ActivityCard(
+                            title: activity['title'],
+                            description: activity['description'],
+                            time: activity['time'],
+                            type: activity['type'],
+                            onTap: () => _navigateBasedOnActivity(activity),
+                          );
+                        },
+                      )),
+                ],
+              ),
+            ),
+            SizedBox(height: padding),
+          ],
+        ),
       ),
     );
   }
 
-  void _showNotificationsDialog(BuildContext context) {
-    final notificationService = Get.find<NotificationService>();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+  void _navigateBasedOnActivity(Map<String, dynamic> activity) {
+    // Navigate based on activity type and content
+    switch (activity['type']) {
+      case 'task':
+        // Navigate to Tasks tab
+        controller.changePage(1);
+        break;
+      case 'maintenance':
+        // Navigate to Maintenance tab
+        controller.changePage(3);
+        break;
+      case 'fuel':
+        // Navigate to Fuel tab
+        controller.changePage(4);
+        break;
+      case 'tracking':
+        // Navigate to Tracking tab
+        controller.changePage(2);
+        break;
+      default:
+        // Fallback to showing a snackbar with activity info
+        Get.snackbar(
+          activity['title'],
+          activity['description'],
+          snackPosition: SnackPosition.BOTTOM,
+        );
+    }
+  }
+}
+
+class _QuickAccessBox extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickAccessBox({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.notifications,
-                    color: Color(0xFF4CAF50),
-                  ),
+                  child: Icon(icon, color: color, size: 24),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Notifications',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const Spacer(),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: theme.iconTheme.color?.withOpacity(0.5)),
               ],
             ),
-            TextButton(
-              onPressed: () async {
-                await notificationService.markAllAsRead();
-              },
-              child: const Text(
-                'Clear All',
-                style: TextStyle(
-                  color: Color(0xFF4CAF50),
-                  fontWeight: FontWeight.bold,
-                ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                height: 1.2,
               ),
             ),
-          ],
-        ),
-        content: Obx(() {
-          final notifications = notificationService.notifications;
-          if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.notifications_off_outlined,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No notifications',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notification = notifications[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: notification.isRead
-                        ? Colors.grey[50]
-                        : const Color(0xFF4CAF50).withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: notification.isRead
-                          ? Colors.grey[200]!
-                          : const Color(0xFF4CAF50).withOpacity(0.1),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _getNotificationColor(notification.type)
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _getNotificationIcon(notification.type),
-                        color: _getNotificationColor(notification.type),
-                      ),
-                    ),
-                    title: Text(
-                      notification.title,
-                      style: TextStyle(
-                        fontWeight: notification.isRead
-                            ? FontWeight.normal
-                            : FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          notification.message,
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatTimeAgo(notification.timestamp),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () async {
-                      if (!notification.isRead) {
-                        await notificationService.markAsRead(notification.id);
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
-          );
-        }),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Close',
-              style: TextStyle(
-                color: Color(0xFF4CAF50),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: color,
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: theme.textTheme.labelSmall,
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  IconData _getNotificationIcon(String type) {
-    switch (type) {
-      case 'emergency':
-        return Icons.warning;
-      case 'maintenance':
-        return Icons.build;
-      case 'schedule':
-        return Icons.schedule;
-      default:
-        return Icons.info;
-    }
-  }
-
-  Color _getNotificationColor(String type) {
-    switch (type) {
-      case 'emergency':
-        return Colors.red;
-      case 'maintenance':
-        return Colors.orange;
-      case 'schedule':
-        return Colors.blue;
-      default:
-        return const Color(0xFF4CAF50);
-    }
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 }
 
-class _HomeContent extends StatelessWidget {
-  final VehicleService _vehicleService = Get.find<VehicleService>();
-  final SampleDataService _sampleDataService = SampleDataService();
-
+class _FleetOverviewCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                // Driver Status Card
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF4CAF50).withOpacity(0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.directions_car_filled,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Assigned Vehicle',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
-                                ),
-                                Obx(() => Text(
-                                      _vehicleService.vehicleId.value,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    )),
-                              ],
-                            ),
-                          ),
-                          Obx(() => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _vehicleService.status.value,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.route,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Current Route',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Obx(() => Text(
-                                        _vehicleService.currentRoute.value,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color:
-                                                  Colors.white.withOpacity(0.8),
-                                            ),
-                                      )),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Vehicle Health Metrics
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Obx(() => _VehicleMetricCard(
-                                  icon: Icons.speed,
-                                  label: 'Speed',
-                                  value:
-                                      '${_vehicleService.speed.value.toStringAsFixed(1)} km/h',
-                                  color: Colors.white,
-                                )),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Obx(() => _VehicleMetricCard(
-                                  icon: Icons.local_gas_station,
-                                  label: 'Fuel',
-                                  value:
-                                      '${_vehicleService.fuelLevel.value.toStringAsFixed(0)}%',
-                                  color: Colors.white,
-                                )),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Obx(() => _VehicleMetricCard(
-                                  icon: Icons.thermostat,
-                                  label: 'Engine',
-                                  value:
-                                      '${_vehicleService.engineTemp.value.toStringAsFixed(1)}°C',
-                                  color: Colors.white,
-                                )),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Today\'s Schedule',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        try {
-                          await _sampleDataService.createSampleData();
-                          Get.snackbar(
-                            'Success',
-                            'Sample data created successfully!',
-                            backgroundColor: Colors.green,
-                            colorText: Colors.white,
-                          );
-                        } catch (e) {
-                          Get.snackbar(
-                            'Error',
-                            'Failed to create sample data: $e',
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.add_circle_outline,
-                          size: 18, color: Color(0xFF4CAF50)),
-                      label: const Text('Create Sample Data',
-                          style: TextStyle(color: Color(0xFF4CAF50))),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _vehicleService.getTodaySchedule(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
+    final theme = Theme.of(context);
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF4CAF50),
-                        ),
-                      );
-                    }
-
-                    final schedules = snapshot.data?.docs ?? [];
-                    print('Number of schedules: ${schedules.length}');
-
-                    if (schedules.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.schedule_outlined,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No schedules for today',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: schedules.length,
-                      separatorBuilder: (context, index) => Divider(
-                        color: const Color(0xFF4CAF50).withOpacity(0.1),
-                        indent: 16,
-                        endIndent: 16,
-                      ),
-                      itemBuilder: (context, index) {
-                        final schedule = schedules[index].data();
-                        print('Building schedule item: $schedule');
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              _getScheduleIcon(schedule['type']),
-                              color: const Color(0xFF4CAF50),
-                              size: 24,
-                            ),
-                          ),
-                          title: Row(
-                            children: [
-                              Text(
-                                schedule['time'],
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(schedule['status'])
-                                      .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  schedule['status'],
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color:
-                                            _getStatusColor(schedule['status']),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                '${schedule['type']} - ${schedule['location']}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.black54,
-                                    ),
-                              ),
-                              if (schedule['passengers'] != null) ...[
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.people_outline,
-                                      size: 16,
-                                      color: Colors.black54,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${schedule['passengers']} passengers',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.black54,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              if (schedule['notes'] != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  schedule['notes'],
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Colors.black54,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          trailing: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Color(0xFF4CAF50),
-                              size: 18,
-                            ),
-                          ),
-                          onTap: () {
-                            _showScheduleDetails(context, schedule);
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Quick Actions',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.5,
-                  children: [
-                    _QuickActionCard(
-                      title: 'Start Trip',
-                      icon: Icons.play_circle_outline,
-                      color: const Color(0xFF4CAF50),
-                      onTap: () async {
-                        try {
-                          await _vehicleService.startTrip();
-                          Get.snackbar(
-                            'Success',
-                            'Trip started successfully',
-                            backgroundColor: Colors.green,
-                            colorText: Colors.white,
-                          );
-                        } catch (e) {
-                          Get.snackbar(
-                            'Error',
-                            'Failed to start trip: $e',
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                    ),
-                    _QuickActionCard(
-                      title: 'End Trip',
-                      icon: Icons.stop_circle_outlined,
-                      color: Colors.red,
-                      onTap: () async {
-                        try {
-                          await _vehicleService.endTrip();
-                          Get.snackbar(
-                            'Success',
-                            'Trip ended successfully',
-                            backgroundColor: Colors.green,
-                            colorText: Colors.white,
-                          );
-                        } catch (e) {
-                          Get.snackbar(
-                            'Error',
-                            'Failed to end trip: $e',
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                    ),
-                    _QuickActionCard(
-                      title: 'Report Issue',
-                      icon: Icons.report_problem_outlined,
-                      color: Colors.orange,
-                      onTap: () {
-                        _showReportIssueDialog(context);
-                      },
-                    ),
-                    _QuickActionCard(
-                      title: 'Check Vehicle',
-                      icon: Icons.car_repair,
-                      color: Colors.blue,
-                      onTap: () {
-                        _showVehicleCheckDialog(context);
-                      },
-                    ),
-                    _QuickActionCard(
-                      title: 'Fuel Tracking',
-                      icon: Icons.local_gas_station,
-                      color: const Color(0xFF4CAF50),
-                      onTap: () {
-                        Get.to(
-                          () => const FuelTrackingView(),
-                          binding: FuelBinding(),
-                          preventDuplicates: true,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Emergency Support Section
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.red.withOpacity(0.1),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.1),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.emergency,
-                              color: Colors.red,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Emergency Support',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _EmergencyButton(
-                              icon: Icons.local_hospital,
-                              label: 'Medical',
-                              onTap: () async {
-                                try {
-                                  await _vehicleService.reportEmergency(
-                                    'Medical',
-                                    'Driver requires medical assistance',
-                                  );
-                                  Get.snackbar(
-                                    'Success',
-                                    'Medical emergency reported',
-                                    backgroundColor: Colors.green,
-                                    colorText: Colors.white,
-                                  );
-                                } catch (e) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Failed to report emergency: $e',
-                                    backgroundColor: Colors.red,
-                                    colorText: Colors.white,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _EmergencyButton(
-                              icon: Icons.car_crash,
-                              label: 'Accident',
-                              onTap: () async {
-                                try {
-                                  await _vehicleService.reportEmergency(
-                                    'Accident',
-                                    'Vehicle involved in an accident',
-                                  );
-                                  Get.snackbar(
-                                    'Success',
-                                    'Accident reported',
-                                    backgroundColor: Colors.green,
-                                    colorText: Colors.white,
-                                  );
-                                } catch (e) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Failed to report accident: $e',
-                                    backgroundColor: Colors.red,
-                                    colorText: Colors.white,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _EmergencyButton(
-                              icon: Icons.support_agent,
-                              label: 'Support',
-                              onTap: () async {
-                                try {
-                                  await _vehicleService.reportEmergency(
-                                    'Support',
-                                    'Driver requires support assistance',
-                                  );
-                                  Get.snackbar(
-                                    'Success',
-                                    'Support request sent',
-                                    backgroundColor: Colors.green,
-                                    colorText: Colors.white,
-                                  );
-                                } catch (e) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Failed to request support: $e',
-                                    backgroundColor: Colors.red,
-                                    colorText: Colors.white,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
-
-  IconData _getScheduleIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'pickup':
-        return Icons.person_add;
-      case 'delivery':
-        return Icons.local_shipping;
-      default:
-        return Icons.schedule;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'upcoming':
-        return const Color(0xFF4CAF50);
-      case 'in progress':
-        return const Color(0xFF2196F3);
-      case 'completed':
-        return const Color(0xFF9E9E9E);
-      case 'cancelled':
-        return const Color(0xFFF44336);
-      default:
-        return const Color(0xFF9E9E9E);
-    }
-  }
-
-  void _showReportIssueDialog(BuildContext context) {
-    final TextEditingController issueController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Issue'),
-        content: TextField(
-          controller: issueController,
-          decoration: const InputDecoration(
-            hintText: 'Describe the issue...',
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withOpacity(0.8),
+            ],
           ),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (issueController.text.isNotEmpty) {
-                try {
-                  await _vehicleService.reportEmergency(
-                    'Issue',
-                    issueController.text,
-                  );
-                  Navigator.pop(context);
-                  Get.snackbar(
-                    'Success',
-                    'Issue reported successfully',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  Get.snackbar(
-                    'Error',
-                    'Failed to report issue: $e',
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              }
-            },
-            child: const Text('Submit'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showScheduleDetails(
-      BuildContext context, Map<String, dynamic> schedule) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _getScheduleIcon(schedule['type']),
-                      color: const Color(0xFF4CAF50),
-                      size: 24,
-                    ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'fleet_overview'.tr,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                InkWell(
+                  onTap: () {
+                    controller.loadQuickStats();
+                    Get.snackbar(
+                      'refreshed'.tr,
+                      'fleet_updated'.tr,
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor:
+                          theme.colorScheme.primary.withOpacity(0.7),
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 2),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          '${schedule['type']} Schedule',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 16,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          schedule['location'],
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.black54,
-                                  ),
+                          'refresh'.tr,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.8),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildDetailRow(
-                    context,
-                    'Time',
-                    schedule['time'],
-                    Icons.access_time,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDetailRow(
-                    context,
-                    'Status',
-                    schedule['status'],
-                    Icons.info_outline,
-                    color: _getStatusColor(schedule['status']),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDetailRow(
-                    context,
-                    'Passengers',
-                    '${schedule['passengers']} people',
-                    Icons.people_outline,
-                  ),
-                  if (schedule['notes'] != null) ...[
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      context,
-                      'Notes',
-                      schedule['notes'],
-                      Icons.note_outlined,
-                    ),
+            const SizedBox(height: 20),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 600;
+                return Wrap(
+                  spacing: 20,
+                  runSpacing: 20,
+                  alignment: isWide
+                      ? WrapAlignment.spaceAround
+                      : WrapAlignment.spaceBetween,
+                  children: [
+                    _buildFleetStatButton(
+                        context,
+                        Icons.local_shipping_rounded,
+                        '15',
+                        'total_vehicles'.tr,
+                        () => Get.toNamed('/vehicles')),
+                    _buildFleetStatButton(
+                        context,
+                        Icons.check_circle_rounded,
+                        '8',
+                        'active'.tr,
+                        () => Get.toNamed('/vehicles?filter=active')),
+                    _buildFleetStatButton(context, Icons.build_rounded, '3',
+                        'in_maintenance'.tr, () => controller.changePage(3)),
+                    _buildFleetStatButton(context, Icons.warning_rounded, '4',
+                        'alerts'.tr, () => Get.toNamed('/alerts')),
                   ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Start trip
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Start Trip'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon, {
-    Color? color,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: (color ?? const Color(0xFF4CAF50)).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: color ?? const Color(0xFF4CAF50),
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.black54,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showVehicleCheckDialog(BuildContext context) {
-    final checkItems = {
-      'Tires': false,
-      'Lights': false,
-      'Brakes': false,
-      'Oil Level': false,
-      'Fuel Level': false,
-      'Windshield': false,
-    };
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.car_repair, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text('Vehicle Check'),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: checkItems.entries.map((item) {
-                return CheckboxListTile(
-                  title: Text(item.key),
-                  value: item.value,
-                  activeColor: Colors.blue,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      checkItems[item.key] = value ?? false;
-                    });
-                  },
                 );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final uncheckedItems = checkItems.entries
-                    .where((item) => !item.value)
-                    .map((item) => item.key)
-                    .toList();
-
-                if (uncheckedItems.isNotEmpty) {
-                  final issues = uncheckedItems.join(', ');
-                  try {
-                    await _vehicleService.reportEmergency(
-                      'Vehicle Check',
-                      'Issues found with: $issues',
-                    );
-                    Navigator.pop(context);
-                    Get.snackbar(
-                      'Vehicle Check Complete',
-                      'Issues reported: $issues',
-                      backgroundColor: Colors.orange,
-                      colorText: Colors.white,
-                    );
-                  } catch (e) {
-                    Get.snackbar(
-                      'Error',
-                      'Failed to report vehicle check issues: $e',
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                    );
-                  }
-                } else {
-                  Navigator.pop(context);
-                  Get.snackbar(
-                    'Vehicle Check Complete',
-                    'All items checked and verified',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                  );
-                }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Submit'),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _VehicleMetricCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _VehicleMetricCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+  Widget _buildFleetStatButton(BuildContext context, IconData icon,
+      String value, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Get.textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color.withOpacity(0.8),
-                ),
+            style: Get.textTheme.labelSmall?.copyWith(
+              color: Colors.white.withOpacity(0.8),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -1570,45 +746,194 @@ class _VehicleMetricCard extends StatelessWidget {
   }
 }
 
-class _EmergencyButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _ActivityCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final DateTime time;
+  final String type;
   final VoidCallback onTap;
 
-  const _EmergencyButton({
-    required this.icon,
-    required this.label,
+  const _ActivityCard({
+    required this.title,
+    required this.description,
+    required this.time,
+    required this.type,
     required this.onTap,
   });
 
+  Color _getActivityColor(String type) {
+    switch (type) {
+      case 'task':
+        return const Color.fromARGB(255, 29, 206, 76);
+      case 'maintenance':
+        return Colors.orange;
+      case 'fuel':
+        return Colors.green;
+      case 'tracking':
+        return const Color.fromARGB(255, 32, 185, 121);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getActivityIcon(String type) {
+    switch (type) {
+      case 'task':
+        return Icons.assignment_outlined;
+      case 'maintenance':
+        return Icons.build_outlined;
+      case 'fuel':
+        return Icons.local_gas_station_outlined;
+      case 'tracking':
+        return Icons.location_on_outlined;
+      default:
+        return Icons.circle_outlined;
+    }
+  }
+
+  String _getActionText(String type) {
+    switch (type) {
+      case 'task':
+        return 'View Task Details';
+      case 'maintenance':
+        return 'Go to Maintenance';
+      case 'fuel':
+        return 'Check Fuel Status';
+      case 'tracking':
+        return 'View Location';
+      default:
+        return 'View Details';
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return DateFormat('MMM d').format(dateTime);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final actionText = _getActionText(type);
+    final color = _getActivityColor(type);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.05),
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.red.withOpacity(0.1),
-          ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: Colors.red,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: Icon(
+                    _getActivityIcon(type),
+                    color: color,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatDateTime(time),
+                      style: theme.textTheme.labelSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        type.capitalizeFirst!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: onTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        actionText,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: color,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1617,66 +942,37 @@ class _EmergencyButton extends StatelessWidget {
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  final String title;
+class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
-  final Color color;
+  final String title;
   final VoidCallback onTap;
+  final Widget? trailing;
+  final Color? textColor;
 
-  const _QuickActionCard({
-    required this.title,
+  const _ProfileMenuItem({
     required this.icon,
-    required this.color,
+    required this.title,
     required this.onTap,
+    this.trailing,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
+    final theme = Theme.of(context);
+
+    return ListTile(
+      leading: Icon(icon, color: textColor ?? theme.iconTheme.color),
+      title: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: textColor,
         ),
       ),
+      trailing: trailing ??
+          Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: theme.iconTheme.color?.withOpacity(0.5)),
+      onTap: onTap,
     );
   }
 }
