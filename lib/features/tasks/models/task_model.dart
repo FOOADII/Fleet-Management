@@ -1,87 +1,90 @@
-class Task {
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class TaskModel {
   final String id;
   final String title;
   final String description;
+  final DateTime dueDate;
+  final String priority;
   final String status;
-  final DateTime createdAt;
-  final DateTime? dueDate;
   final String? assignedTo;
   final String? vehicleId;
-  final String priority;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
-  Task({
+  TaskModel({
     required this.id,
     required this.title,
     required this.description,
+    required this.dueDate,
+    required this.priority,
     required this.status,
-    required this.createdAt,
-    this.dueDate,
     this.assignedTo,
     this.vehicleId,
-    required this.priority,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'status': status,
-      'createdAt': createdAt.toIso8601String(),
-      'dueDate': dueDate?.toIso8601String(),
-      'assignedTo': assignedTo,
-      'vehicleId': vehicleId,
-      'priority': priority,
-      'updatedAt': updatedAt?.toIso8601String(),
-    };
-  }
-
-  factory Task.fromMap(Map<String, dynamic> map) {
-    return Task(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      description: map['description'] as String,
-      status: map['status'] as String,
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'] as String)
-          : DateTime.now(),
-      dueDate: map['dueDate'] != null
-          ? DateTime.parse(map['dueDate'] as String)
-          : null,
-      assignedTo: map['assignedTo'] as String?,
-      vehicleId: map['vehicleId'] as String?,
-      priority: map['priority'] as String,
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.parse(map['updatedAt'] as String)
-          : null,
-    );
-  }
-
-  Task copyWith({
+  TaskModel copyWith({
     String? id,
     String? title,
     String? description,
-    String? status,
-    DateTime? createdAt,
     DateTime? dueDate,
+    String? priority,
+    String? status,
     String? assignedTo,
     String? vehicleId,
-    String? priority,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) {
-    return Task(
+    return TaskModel(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
-      status: status ?? this.status,
-      createdAt: createdAt ?? this.createdAt,
       dueDate: dueDate ?? this.dueDate,
+      priority: priority ?? this.priority,
+      status: status ?? this.status,
       assignedTo: assignedTo ?? this.assignedTo,
       vehicleId: vehicleId ?? this.vehicleId,
-      priority: priority ?? this.priority,
+      createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'dueDate': Timestamp.fromDate(dueDate),
+      'priority': priority,
+      'status': status,
+      'assignedTo': assignedTo,
+      'vehicleId': vehicleId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+
+  factory TaskModel.fromJson(Map<String, dynamic> json) {
+    DateTime _parseDateTime(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.parse(value);
+      return DateTime.now();
+    }
+
+    return TaskModel(
+      id: json['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      dueDate: _parseDateTime(json['dueDate']),
+      priority: json['priority']?.toString() ?? 'medium',
+      status: json['status']?.toString() ?? 'pending',
+      assignedTo: json['assignedTo']?.toString(),
+      vehicleId: json['vehicleId']?.toString(),
+      createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt']),
     );
   }
 }
