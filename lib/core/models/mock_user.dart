@@ -1,6 +1,6 @@
 class MockUser {
   final String uid;
-  final String? email;
+  final String email;
   final String? displayName;
   final String? photoURL;
   final bool emailVerified;
@@ -8,7 +8,7 @@ class MockUser {
 
   MockUser({
     required this.uid,
-    this.email,
+    required this.email,
     this.displayName,
     this.photoURL,
     this.emailVerified = false,
@@ -29,7 +29,7 @@ class MockUser {
   factory MockUser.fromMap(Map<String, dynamic> map) {
     return MockUser(
       uid: map['uid'] ?? '',
-      email: map['email'],
+      email: map['email'] ?? '',
       displayName: map['displayName'],
       photoURL: map['photoURL'],
       emailVerified: map['emailVerified'] ?? false,

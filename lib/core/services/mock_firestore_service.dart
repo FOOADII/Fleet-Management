@@ -36,7 +36,7 @@ class MockDocumentReference {
 
   Future<MockDocumentSnapshot> get() async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     return MockDocumentSnapshot(
       id: id,
       data: _data,
@@ -45,13 +45,13 @@ class MockDocumentReference {
 
   Future<void> update(Map<String, dynamic> data) async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     _data.addAll(data);
   }
 
   Future<void> delete() async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     _data.clear();
   }
 }
@@ -76,7 +76,7 @@ class MockCollectionReference {
 
   Future<MockQuerySnapshot> get() async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     final docs = _documents.entries.map((entry) {
       return MockDocumentSnapshot(
         id: entry.key,
@@ -88,7 +88,7 @@ class MockCollectionReference {
 
   Future<MockDocumentReference> add(Map<String, dynamic> data) async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     final docId = const Uuid().v4();
     _documents[docId] = data;
     return doc(docId);
@@ -100,9 +100,15 @@ class MockFirestoreService {
 
   MockFirestoreService({
     Map<String, Map<String, Map<String, dynamic>>>? collections,
-  }) : _collections = collections ?? {};
+  }) : _collections = collections ?? {} {
+    // Initialize with empty collections
+    _collections['tasks'] = {};
+  }
 
   MockCollectionReference collection(String path) {
+    if (!_collections.containsKey(path)) {
+      _collections[path] = {};
+    }
     return MockCollectionReference(
       path: path,
       documents: _collections[path],

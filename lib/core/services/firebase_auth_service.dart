@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -8,16 +9,19 @@ import 'auth_service.dart';
 
 class FirebaseAuthService extends GetxService implements AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late final GoogleSignIn _googleSignIn;
   final _firebaseUser = Rx<User?>(null);
   final _organizationId = RxString(
     'ddu-fleet',
   ); // Organization ID for DDU Fleet Management
+  final _isDriver = RxBool(false);
 
   User? get currentUser => _firebaseUser.value;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   bool get isLoggedIn => _firebaseUser.value != null;
-  String get organizationId => _organizationId.value;
+  String? get organizationId => _organizationId.value;
+  Rx<bool> get isDriver => _isDriver;
 
   @override
   void onInit() {
@@ -30,6 +34,15 @@ class FirebaseAuthService extends GetxService implements AuthService {
       }
 
       _firebaseUser.bindStream(_auth.authStateChanges());
+
+      // Check if user is a driver whenever auth state changes
+      ever(_firebaseUser, (user) {
+        if (user != null) {
+          checkIfUserIsDriver();
+        } else {
+          _isDriver.value = false;
+        }
+      });
 
       // Initialize Google Sign In based on platform
       _googleSignIn = GoogleSignIn(
@@ -53,6 +66,42 @@ class FirebaseAuthService extends GetxService implements AuthService {
         backgroundColor: Colors.red[100],
         colorText: Colors.red[900],
       );
+    }
+  }
+
+  Future<bool> checkIfUserIsDriver() async {
+    try {
+      if (_firebaseUser.value == null) {
+        _isDriver.value = false;
+        return false;
+      }
+
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(_firebaseUser.value!.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        _isDriver.value = false;
+        return false;
+      }
+
+      final userData = userDoc.data();
+      if (userData == null) {
+        _isDriver.value = false;
+        return false;
+      }
+
+      // Check if user has driver role
+      final role = userData['role'] as String?;
+      final isUserDriver = role == 'driver';
+
+      _isDriver.value = isUserDriver;
+      return isUserDriver;
+    } catch (e) {
+      debugPrint('Error checking if user is driver: $e');
+      _isDriver.value = false;
+      return false;
     }
   }
 
