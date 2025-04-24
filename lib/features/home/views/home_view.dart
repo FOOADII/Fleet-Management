@@ -373,13 +373,13 @@ class _HomeContent extends GetView<HomeController> {
                 children: [
                   Expanded(
                     child: Obx(() => _QuickAccessBox(
-                          title: 'vehicle_status'.tr,
-                          value:
-                              '${controller.quickStats['activeVehicles']}/20',
-                          subtitle: 'active_vehicles'.tr,
-                          icon: Icons.local_shipping_rounded,
+                          title: 'current_location'.tr,
+                          value: controller.quickStats['currentLocation'] ??
+                              'Updating...',
+                          subtitle: 'your_location'.tr,
+                          icon: Icons.location_on_rounded,
                           color: Colors.blue,
-                          onTap: () => Get.toNamed('/vehicles'),
+                          onTap: () => controller.changePage(2),
                         )),
                   ),
                   const SizedBox(width: 16),
@@ -390,8 +390,7 @@ class _HomeContent extends GetView<HomeController> {
                           subtitle: 'pending_tasks'.tr,
                           icon: Icons.assignment_rounded,
                           color: Colors.orange,
-                          onTap: () =>
-                              controller.changePage(1), // Navigate to Tasks tab
+                          onTap: () => controller.changePage(1),
                         )),
                   ),
                 ],
@@ -405,25 +404,25 @@ class _HomeContent extends GetView<HomeController> {
                 children: [
                   Expanded(
                     child: Obx(() => _QuickAccessBox(
-                          title: 'fuel_alerts'.tr,
-                          value: '${controller.quickStats['fuelAlerts']}',
-                          subtitle: 'low_fuel'.tr,
-                          icon: Icons.local_gas_station_rounded,
-                          color: Colors.red,
-                          onTap: () =>
-                              controller.changePage(4), // Navigate to Fuel tab
+                          title: 'next_destination'.tr,
+                          value: controller.quickStats['nextDestination'] ??
+                              'No Task',
+                          subtitle: 'upcoming_stop'.tr,
+                          icon: Icons.navigation_rounded,
+                          color: Colors.green,
+                          onTap: () => controller.changePage(2),
                         )),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Obx(() => _QuickAccessBox(
-                          title: 'maintenance_due'.tr,
-                          value: '${controller.quickStats['maintenanceDue']}',
-                          subtitle: 'vehicles_due'.tr,
-                          icon: Icons.build_rounded,
+                          title: 'route_progress'.tr,
+                          value:
+                              '${controller.quickStats['routeProgress'] ?? 0}%',
+                          subtitle: 'completion_status'.tr,
+                          icon: Icons.route_rounded,
                           color: Colors.purple,
-                          onTap: () => controller
-                              .changePage(3), // Navigate to Maintenance tab
+                          onTap: () => controller.changePage(2),
                         )),
                   ),
                 ],
@@ -601,6 +600,8 @@ class _FleetOverviewCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
 
     return Card(
       elevation: 2,
@@ -627,18 +628,18 @@ class _FleetOverviewCard extends GetView<HomeController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'fleet_overview'.tr,
+                  'Driver Dashboard'.tr,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 InkWell(
-                  onTap: () {
-                    controller.loadQuickStats();
+                  onTap: () async {
+                    await controller.loadQuickStats();
                     Get.snackbar(
                       'refreshed'.tr,
-                      'fleet_updated'.tr,
+                      'status_updated'.tr,
                       snackPosition: SnackPosition.BOTTOM,
                       backgroundColor:
                           theme.colorScheme.primary.withOpacity(0.7),
@@ -657,6 +658,7 @@ class _FleetOverviewCard extends GetView<HomeController> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.refresh_rounded,
@@ -677,36 +679,37 @@ class _FleetOverviewCard extends GetView<HomeController> {
               ],
             ),
             const SizedBox(height: 20),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth > 600;
-                return Wrap(
+            Obx(() => Wrap(
                   spacing: 20,
                   runSpacing: 20,
-                  alignment: isWide
-                      ? WrapAlignment.spaceAround
-                      : WrapAlignment.spaceBetween,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
                     _buildFleetStatButton(
                         context,
-                        Icons.local_shipping_rounded,
-                        '15',
-                        'total_vehicles'.tr,
-                        () => Get.toNamed('/vehicles')),
+                        Icons.directions_car_rounded,
+                        controller.vehicleStatus.value,
+                        'vehicle_status'.tr,
+                        () => Get.toNamed('/vehicle-details')),
                     _buildFleetStatButton(
                         context,
-                        Icons.check_circle_rounded,
-                        '8',
-                        'active'.tr,
-                        () => Get.toNamed('/vehicles?filter=active')),
-                    _buildFleetStatButton(context, Icons.build_rounded, '3',
-                        'in_maintenance'.tr, () => controller.changePage(3)),
-                    _buildFleetStatButton(context, Icons.warning_rounded, '4',
-                        'alerts'.tr, () => Get.toNamed('/alerts')),
+                        Icons.assignment_rounded,
+                        '${controller.quickStats['pendingTasks']}',
+                        'todays_tasks'.tr,
+                        () => controller.changePage(1)),
+                    _buildFleetStatButton(
+                        context,
+                        Icons.local_gas_station_rounded,
+                        '75%',
+                        'fuel_level'.tr,
+                        () => controller.changePage(4)),
+                    _buildFleetStatButton(
+                        context,
+                        Icons.speed_rounded,
+                        '${controller.quickStats['mileage'] ?? 12435}',
+                        'mileage_km'.tr,
+                        () => Get.toNamed('/vehicle-details')),
                   ],
-                );
-              },
-            ),
+                )),
           ],
         ),
       ),
